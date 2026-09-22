@@ -1,7 +1,6 @@
-const CACHE_NAME = 'diario-ferro-v2';
+const CACHE_NAME = 'diario-ferro-v3';
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
+  './diario2026.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
