@@ -13,7 +13,7 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "./diario2026.html",
+  "start_url": "./index.html",
   "background_color": "#121212",
   "theme_color": "#1e1e1e",
   "display": "standalone",
