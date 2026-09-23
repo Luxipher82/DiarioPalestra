@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Diario di Ferro - Beta 2.7</title>
+  <title>Diario di Ferro - Beta 2.8</title>
   
   <!-- PWA Headers -->
   <link rel="manifest" href="manifest.json">
@@ -23,6 +23,7 @@
       --border: #333333;
       --success: #4caf50;
       --danger: #f44336;
+      --info: #2196f3;
     }
 
     * {
@@ -44,11 +45,19 @@
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
-      z-index: 100;
+      z-index: 90;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 6px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 600px;
     }
 
     header h1 {
@@ -62,11 +71,13 @@
     .timer-container {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       background: #181818;
       padding: 4px 10px;
       border-radius: 20px;
       border: 1px solid var(--border);
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .timer-display {
@@ -118,7 +129,7 @@
       display: flex;
       justify-content: space-around;
       border-top: 1px solid var(--border);
-      z-index: 100;
+      z-index: 90;
     }
 
     nav button {
@@ -190,6 +201,12 @@
     button.btn-secondary {
       background-color: #333;
       color: #fff;
+    }
+
+    button.btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
     }
 
     button.btn-sm {
@@ -273,7 +290,7 @@
     }
 
     /* History & Lists */
-    .history-item {
+    .history-item, .db-ex-item {
       border: 1px solid var(--border);
       border-radius: 6px;
       margin-bottom: 10px;
@@ -281,13 +298,13 @@
       overflow: hidden;
     }
 
-    .history-summary {
+    .history-summary, .db-ex-summary {
       padding: 12px;
       cursor: pointer;
       user-select: none;
     }
 
-    .history-summary:hover {
+    .history-summary:hover, .db-ex-summary:hover {
       background: #222;
     }
 
@@ -321,7 +338,7 @@
       color: var(--text-muted);
     }
 
-    .history-details {
+    .history-details, .db-ex-details {
       display: none;
       padding: 12px;
       border-top: 1px solid var(--border);
@@ -330,7 +347,7 @@
       line-height: 1.4;
     }
 
-    .history-item.open .history-details {
+    .history-item.open .history-details, .db-ex-item.open .db-ex-details {
       display: block;
     }
 
@@ -342,12 +359,120 @@
     .search-box {
       margin-bottom: 15px;
     }
+
+    /* Modali e Full-Screen Overlay */
+    .fullscreen-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--bg-color);
+      z-index: 1000;
+      flex-direction: column;
+      padding: 15px;
+      overflow-y: auto;
+    }
+
+    .fullscreen-modal.active {
+      display: flex;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h2 {
+      color: var(--accent);
+      font-size: 1.2rem;
+    }
+
+    .modal-close-btn {
+      background: #333;
+      border: none;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    /* Category Chips Filter */
+    .filter-chips {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      scrollbar-width: none;
+    }
+
+    .filter-chips::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      background: #2a2a2a;
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .chip.active {
+      background: var(--accent);
+      color: #000;
+      font-weight: bold;
+      border-color: var(--accent);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      background: #333;
+      color: var(--accent);
+      margin-left: 6px;
+    }
+
+    .video-link {
+      display: inline-block;
+      margin-top: 6px;
+      color: var(--info);
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .template-item {
+      background: #181818;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>Diario di Ferro</h1>
+    <div class="header-top">
+      <h1>Diario di Ferro</h1>
+      <button class="btn btn-sm btn-outline" onclick="openExerciseArchiveModal()">🗂️ Archivio Esercizi</button>
+    </div>
     
     <!-- CRONOMETRO RECUPERO -->
     <div class="timer-container">
@@ -374,17 +499,15 @@
         <label for="workout-select">Scegli la Scheda</label>
         <select id="workout-select" onchange="loadWorkoutTemplate()">
           <option value="">-- Seleziona Giorno --</option>
-          <option value="A">GIORNO A – Petto / Spalle / Tricipiti / Core</option>
-          <option value="B">GIORNO B – Schiena / Bicipiti / Core</option>
-          <option value="C">GIORNO C – Spalle / Gambe / Core</option>
-          <option value="CARDIO">GIORNO CARDIO – Corsa / Montagna</option>
         </select>
+
+        <button class="btn btn-secondary btn-sm" style="margin-top: 5px;" onclick="openTemplateManagerModal()">⚙️ Gestisci / Crea Schede</button>
       </div>
 
       <div id="workout-form"></div>
 
       <div class="card" id="add-ex-card" style="display: none;">
-        <button class="btn btn-secondary" onclick="addNewExercise()">+ Aggiungi Esercizio</button>
+        <button class="btn btn-secondary" onclick="openPickerForWorkout()">+ Aggiungi Esercizio dal Database</button>
       </div>
 
       <div class="card" id="save-card" style="display: none;">
@@ -443,6 +566,95 @@
     </button>
   </nav>
 
+  <!-- MODALE FULLSCREEN: SELETTORE ESERCIZI DAL DATABASE -->
+  <div id="picker-modal" class="fullscreen-modal">
+    <div class="modal-header">
+      <h2>Database Esercizi</h2>
+      <button class="modal-close-btn" onclick="closePickerModal()">Chiudi ✖</button>
+    </div>
+
+    <input type="text" id="picker-search" placeholder="🔎 Cerca esercizio per nome..." oninput="renderPickerList()">
+
+    <div class="filter-chips" id="picker-category-chips">
+      <!-- Generato dinamicamente -->
+    </div>
+
+    <div id="picker-list" style="flex-grow: 1; overflow-y: auto;">
+      <!-- Lista Esercizi -->
+    </div>
+  </div>
+
+  <!-- MODALE FULLSCREEN: ARCHIVIO ESERCIZI (CONSULTAZIONE E CREAZIONE) -->
+  <div id="archive-modal" class="fullscreen-modal">
+    <div class="modal-header">
+      <h2>Archivio & Spiegazioni Esercizi</h2>
+      <button class="modal-close-btn" onclick="closeExerciseArchiveModal()">Chiudi ✖</button>
+    </div>
+
+    <div class="card" style="margin-bottom: 15px;">
+      <h2>Aggiungi Nuovo Esercizio Personalizzato</h2>
+      <input type="text" id="new-ex-name" placeholder="Nome Esercizio (es. Panca piana)">
+      <select id="new-ex-cat">
+        <option value="Petto">Petto</option>
+        <option value="Spalle">Spalle</option>
+        <option value="Dorso">Dorso</option>
+        <option value="Bicipiti">Bicipiti</option>
+        <option value="Tricipiti">Tricipiti</option>
+        <option value="Gambe">Gambe</option>
+        <option value="Core">Core</option>
+        <option value="Cardio">Cardio</option>
+      </select>
+      <textarea id="new-ex-desc" rows="2" placeholder="Note o spiegazione esecuzione (opzionale)"></textarea>
+      <button class="btn" onclick="saveCustomExercise()">Salva nell'Archivio</button>
+    </div>
+
+    <input type="text" id="archive-search" placeholder="🔎 Cerca nell'archivio..." oninput="renderArchiveList()">
+    
+    <div class="filter-chips" id="archive-category-chips">
+      <!-- Generato dinamicamente -->
+    </div>
+
+    <div id="archive-list" style="flex-grow: 1; overflow-y: auto;">
+      <!-- Lista Consultazione -->
+    </div>
+  </div>
+
+  <!-- MODALE FULLSCREEN: GESTORE SCHEDE (CUSTOM WORKOUT BUILDER) -->
+  <div id="template-manager-modal" class="fullscreen-modal">
+    <div class="modal-header">
+      <h2>Gestione Schede Personali</h2>
+      <button class="modal-close-btn" onclick="closeTemplateManagerModal()">Chiudi ✖</button>
+    </div>
+
+    <div id="template-list-view">
+      <button class="btn" style="margin-bottom: 15px;" onclick="openTemplateEditor(null)">+ Crea Nuova Scheda</button>
+      <div id="templates-container"></div>
+    </div>
+
+    <div id="template-editor-view" style="display: none;">
+      <h3 id="editor-title" style="color: var(--accent); margin-bottom: 10px;">Nuova Scheda</h3>
+      <label for="editor-template-title">Titolo Scheda</label>
+      <input type="text" id="editor-template-title" placeholder="Es. GIORNO A - Push">
+
+      <label>
+        <input type="checkbox" id="editor-template-is-cardio" onchange="toggleEditorCardioMode()"> Scheda di tipo CARDIO
+      </label>
+
+      <div style="margin-top: 15px; margin-bottom: 10px;">
+        <h4>Esercizi in questa Scheda:</h4>
+      </div>
+
+      <div id="editor-exercises-list"></div>
+
+      <button class="btn btn-secondary" style="margin-bottom: 15px;" onclick="openPickerForTemplateEditor()">+ Aggiungi Esercizio dal Database</button>
+
+      <div class="btn-group">
+        <button class="btn" onclick="saveTemplateFromEditor()">Salva Scheda</button>
+        <button class="btn btn-secondary" onclick="closeTemplateEditor()">Annulla</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     /* REGISTRAZIONE SERVICE WORKER PER PWA */
     if ('serviceWorker' in navigator) {
@@ -453,57 +665,157 @@
       });
     }
 
-    const workouts = {
+    /* DATABASE DI BASE DEGLI ESERCIZI (SISTEMA) */
+    const BASE_EXERCISES_DATABASE = [
+      // PETTO
+      { id: "ex_panca_piana", name: "Panca piana con bilanciere", category: "Petto", isCardio: false, desc: "Sdraiato su panca, adduci le scapole, impugna il bilanciere poco più largo delle spalle. Scendi al petto controllando e spingi." },
+      { id: "ex_panca_inclinata_bil", name: "Panca inclinata con bilanciere", category: "Petto", isCardio: false, desc: "Panca a 30-45 gradi. Lavoro focalizzato sui fasci clavicolari (petto alto)." },
+      { id: "ex_spinte_manubri_inc", name: "Spinte con manubri su panca inclinata", category: "Petto", isCardio: false, desc: "Permette un ROM maggiore rispetto al bilanciere. Mantieni le scapole addotte e depresse." },
+      { id: "ex_spinte_manubri_piana", name: "Spinte con manubri su panca piana", category: "Petto", isCardio: false, desc: "Ottimo controllo e tensione costante sui pettorali." },
+      { id: "ex_hex_press", name: "Squeeze/Hex press con manubri", category: "Petto", isCardio: false, desc: "Premi costantemente i due manubri l'uno contro l'altro durante tutto il movimento." },
+      { id: "ex_croci_manubri", name: "Croci con manubri", category: "Petto", isCardio: false, desc: "Aperture controllate mantenendo i gomiti leggermente flessi per isolare il petto." },
+      { id: "ex_croci_cavi", name: "Croci ai cavi", category: "Petto", isCardio: false, desc: "Tensione continua sia nella fase eccentrica che concentrica." },
+      { id: "ex_chest_press_cavo", name: "Chest press al cavo", category: "Petto", isCardio: false, desc: "Spinta controllata ai cavi adattando l'esecuzione." },
+      { id: "ex_pushup", name: "Piegamenti / Push-up", category: "Petto", isCardio: false, desc: "Corpo in plank, gomiti a 45 gradi rispetto al busto, scendi fino a sfiorare il pavimento." },
+      { id: "ex_pushup_45", name: "Piegamenti a 45 gradi", category: "Petto", isCardio: false, desc: "Mani rialzate per facilitare l'esecuzione o concentrarsi sul petto basso." },
+      { id: "ex_pushup_decline", name: "Push-up piedi rialzati", category: "Petto", isCardio: false, desc: "Piedi su rialzo per spostare il carico sulla parte superiore del petto." },
+      { id: "ex_dips_petto", name: "Dips / Parallele", category: "Petto", isCardio: false, desc: "Busto leggermente inclinato in avanti per reclutare maggiormente il gran pettorale." },
+
+      // SPALLE
+      { id: "ex_military_press_bil", name: "Military press con bilanciere", category: "Spalle", isCardio: false, desc: "Spinta verticale in piedi o da seduto. Core e glutei contratti." },
+      { id: "ex_military_press_man", name: "Military press con manubri", category: "Spalle", isCardio: false, desc: "Spinta verticale con manubri per la salute articolare." },
+      { id: "ex_shoulder_press_man", name: "Shoulder press con manubri", category: "Spalle", isCardio: false, desc: "Variante seduto con schienale inclinato a 75-80 gradi." },
+      { id: "ex_arnold_press", name: "Arnold press", category: "Spalle", isCardio: false, desc: "Partenza con palmi rivolti verso il busto, rotazione durante la spinta." },
+      { id: "ex_alzate_laterali", name: "Alzate laterali", category: "Spalle", isCardio: false, desc: "Solleva i manubri verso l'esterno fino a 90 gradi. Focus sul deltoide laterale." },
+      { id: "ex_alzate_laterali_cavo", name: "Alzate laterali al cavo", category: "Spalle", isCardio: false, desc: "Tensione costante lungo tutto l'arco di movimento." },
+      { id: "ex_face_pull", name: "Face pull", category: "Spalle", isCardio: false, desc: "Cavo alto con fune, tira verso la fronte extraruotando le spalle. Salute della cuffia e deltoide posteriore." },
+      { id: "ex_alzate_posteriori_man", name: "Alzate posteriori con manubri", category: "Spalle", isCardio: false, desc: "Busto flesso in avanti, apertura per isolare il deltoide posteriore." },
+      { id: "ex_reverse_fly_cavo", name: "Reverse fly al cavo", category: "Spalle", isCardio: false, desc: "Cavi incrociati ad altezza petto per il deltoide posteriore." },
+      { id: "ex_front_raise", name: "Front raise / Alzate frontali", category: "Spalle", isCardio: false, desc: "Focus sul deltoide anteriore." },
+
+      // DORSO
+      { id: "ex_trazioni_prona", name: "Trazioni alla sbarra (presa prona)", category: "Dorso", isCardio: false, desc: "Palmi rivolti in avanti. Tira portando il petto verso la sbarra." },
+      { id: "ex_trazioni_supina", name: "Trazioni alla sbarra (presa supina)", category: "Dorso", isCardio: false, desc: "Palmi rivolti verso di te. Maggior reclutamento del bicipite." },
+      { id: "ex_trazioni_neutra", name: "Trazioni alla sbarra (presa neutra)", category: "Dorso", isCardio: false, desc: "Palmi che si guardano. Presa molto confortevole per le spalle." },
+      { id: "ex_lat_machine_larga", name: "Lat machine presa larga", category: "Dorso", isCardio: false, desc: "Tira la sbarra al petto adducendo le scapole." },
+      { id: "ex_lat_machine_stretta", name: "Lat machine presa stretta", category: "Dorso", isCardio: false, desc: "Utilizzo del triangolo o presa stretta neutra per un maggior allungamento del dorsale." },
+      { id: "ex_lat_machine_supina", name: "Lat machine presa supina", category: "Dorso", isCardio: false, desc: "Presa inversa per aumentare il ROM del gran dorsale." },
+      { id: "ex_single_arm_lat", name: "Single-arm lat pulldown", category: "Dorso", isCardio: false, desc: "Lavoro unilaterale al cavo alto per il massimo isolamento e contrazione." },
+      { id: "ex_rematore_bilanciere", name: "Rematore con bilanciere", category: "Dorso", isCardio: false, desc: "Busto inclinato a 45 gradi, tira il bilanciere verso l'ombelico." },
+      { id: "ex_rematore_1_manubrio", name: "Rematore con manubrio a un braccio", category: "Dorso", isCardio: false, desc: "Appoggio su panca, tira il manubrio verso il fianco." },
+      { id: "ex_rematore_2_manubri", name: "Rematore con due manubri", category: "Dorso", isCardio: false, desc: "Tirata simultanea con due manubri a busto flesso." },
+      { id: "ex_chest_supported_row", name: "Rematore petto appoggiato su panca 45°", category: "Dorso", isCardio: false, desc: "Scarica totalmente la zona lombare isolando la schiena." },
+      { id: "ex_pulley_basso", name: "Rematore al cavo / Pulley basso", category: "Dorso", isCardio: false, desc: "Tirata orizzontale per lo spessore del dorso." },
+      { id: "ex_pullover_manubrio", name: "Pullover con manubrio", category: "Dorso", isCardio: false, desc: "Sdraiato su panca, espansione toracica e allungamento del dorsale." },
+      { id: "ex_pullover_cavo", name: "Pullover alla puleggia / Straight-arm", category: "Dorso", isCardio: false, desc: "Braccia quasi tese, tira la sbarra/fune verso le cosce." },
+
+      // BICIPITI
+      { id: "ex_curl_manubri", name: "Curl con manubri", category: "Bicipiti", isCardio: false, desc: "Flessione del gomito con supinazione del polso." },
+      { id: "ex_curl_bilanciere", name: "Curl con bilanciere", category: "Bicipiti", isCardio: false, desc: "Esercizio fondamentale per la massa dei bicipiti." },
+      { id: "ex_hammer_curl", name: "Hammer curl", category: "Bicipiti", isCardio: false, desc: "Presa neutra (a martello) per il brachioradiale e il brachiale." },
+      { id: "ex_curl_inclinato", name: "Curl inclinato su panca", category: "Bicipiti", isCardio: false, desc: "Panca a 45-60 gradi per mettere il capo lungo del bicipite in massimo allungamento." },
+      { id: "ex_bayesian_curl", name: "Bayesian curl al cavo", category: "Bicipiti", isCardio: false, desc: "Cavo basso alle spalle, esecuzione in allungamento con tensione costante." },
+      { id: "ex_curl_concentrato", name: "Curl concentrato", category: "Bicipiti", isCardio: false, desc: "Gomito appoggiato all'interno della coscia per un isolamento totale." },
+      { id: "ex_curl_cavo_basso", name: "Curl al cavo basso", category: "Bicipiti", isCardio: false, desc: "Tensione uniforme lungo tutto il movimento." },
+
+      // TRICIPITI
+      { id: "ex_pushdown_cavo", name: "Pushdown al cavo", category: "Tricipiti", isCardio: false, desc: "Gomiti fermi ai fianchi, estensione dell'avambraccio verso il basso." },
+      { id: "ex_pushdown_fune", name: "Pushdown con fune", category: "Tricipiti", isCardio: false, desc: "Apertura della fune in finale di contrazione." },
+      { id: "ex_estensioni_testa_man", name: "Estensioni sopra la testa con manubrio", category: "Tricipiti", isCardio: false, desc: "Focus sul capo lungo del tricipite in allungamento." },
+      { id: "ex_estensioni_testa_cavo", name: "Estensione sopra la testa alla puleggia", category: "Tricipiti", isCardio: false, desc: "Tensione costante sopra la testa." },
+      { id: "ex_french_press_man", name: "French press con manubri", category: "Tricipiti", isCardio: false, desc: "Sdraiato su panca, flessione dei gomiti verso le tempie." },
+      { id: "ex_skull_crusher", name: "Skull crusher con bilanciere/manubri", category: "Tricipiti", isCardio: false, desc: "Discesa controllata verso la fronte o sopra la testa." },
+      { id: "ex_pushup_stretti", name: "Piegamenti presa stretta", category: "Tricipiti", isCardio: false, desc: "Mani vicine sotto il petto per spostare il lavoro sui tricipiti." },
+      { id: "ex_kickback", name: "Kickback con manubrio/cavo", category: "Tricipiti", isCardio: false, desc: "Estensione posteriore dell'avambraccio a busto flesso." },
+      { id: "ex_bench_dips", name: "Bench dips / Dip su panca", category: "Tricipiti", isCardio: false, desc: "Mani appoggiate alla panca dietro la schiena, scendi piegando i gomiti." },
+
+      // GAMBE
+      { id: "ex_squat_bilanciere", name: "Squat con bilanciere", category: "Gambe", isCardio: false, desc: "Accosciata completa mantenendo la schiena neutra." },
+      { id: "ex_goblet_squat", name: "Goblet squat con manubrio", category: "Gambe", isCardio: false, desc: "Manubrio tenuto al petto, ottimo per imparare e mantenere la postura." },
+      { id: "ex_bulgarian_split_squat", name: "Bulgarian split squat", category: "Gambe", isCardio: false, desc: "Piede posteriore su panca. Eccezionale lavoro unilaterale su quadricipiti e glutei." },
+      { id: "ex_affondi_avanti", name: "Affondi camminati / avanti", category: "Gambe", isCardio: false, desc: "Passo avanti, ginocchio posteriore che sfiora il suolo." },
+      { id: "ex_affondi_indietro", name: "Affondi indietro", category: "Gambe", isCardio: false, desc: "Minore stress sul ginocchio anteriore rispetto all'affondo avanti." },
+      { id: "ex_step_up", name: "Step-up su rialzo", category: "Gambe", isCardio: false, desc: "Salita su box o panca spingendo interamente con la gamba anteriore." },
+      { id: "ex_stacco_rumeno_bil", name: "Stacco rumeno con bilanciere", category: "Gambe", isCardio: false, desc: "Focus sulla catena posteriore (femorali e glutei) in allungamento." },
+      { id: "ex_stacco_rumeno_man", name: "Stacco rumeno con manubri", category: "Gambe", isCardio: false, desc: "Ottimo controllo del bacino durante la cerniera dell'anca." },
+      { id: "ex_hip_thrust_bil", name: "Hip thrust con bilanciere", category: "Gambe", isCardio: false, desc: "Spinta d'anca con schiena appoggiata alla panca. Massimo isolamento dei glutei." },
+      { id: "ex_glute_bridge", name: "Glute bridge", category: "Gambe", isCardio: false, desc: "Spinta d'anca a terra a corpo libero o con sovraccarico." },
+      { id: "ex_single_leg_bridge", name: "Single-leg glute bridge", category: "Gambe", isCardio: false, desc: "Variante unilaterale a terra." },
+      { id: "ex_good_morning", name: "Good morning con bilanciere", category: "Gambe", isCardio: false, desc: "Cerniera dell'anca con bilanciere sulle spalle per femorali e lombari." },
+      { id: "ex_leg_extension", name: "Leg extension", category: "Gambe", isCardio: false, desc: "Isolamento del quadricipite." },
+      { id: "ex_leg_curl_cavo", name: "Leg curl al cavo", category: "Gambe", isCardio: false, desc: "Flessione della gamba al cavo basso per i femorali." },
+      { id: "ex_calf_raise_in_piedi", name: "Calf raise in piedi", category: "Gambe", isCardio: false, desc: "Estensione delle caviglie per i polpacci." },
+      { id: "ex_calf_raise_rialzo", name: "Calf raise su rialzo", category: "Gambe", isCardio: false, desc: "Permette il massimo allungamento del polpaccio in discesa." },
+
+      // CORE
+      { id: "ex_plank", name: "Plank isometrico", category: "Core", isCardio: false, desc: "Tenuta isometrica del corpo in linea, addominali e glutei contratti." },
+      { id: "ex_side_plank", name: "Side plank", category: "Core", isCardio: false, desc: "Tenuta laterale per gli obliqui e la stabilità della colonna." },
+      { id: "ex_crunch", name: "Crunch addominale", category: "Core", isCardio: false, desc: "Flessione della colonna senza sollevare la zona lombare." },
+      { id: "ex_reverse_crunch", name: "Reverse crunch", category: "Core", isCardio: false, desc: "Sollevamento del bacino verso il petto." },
+      { id: "ex_leg_raise", name: "Leg raise a terra", category: "Core", isCardio: false, desc: "Sollevamento gambe mantenendo la schiena adesa al suolo." },
+      { id: "ex_knee_raise_sbarra", name: "Knee raise alla sbarra", category: "Core", isCardio: false, desc: "In sospensione, solleva le ginocchia verso il petto." },
+      { id: "ex_cable_crunch", name: "Crunch alla puleggia / cavo", category: "Core", isCardio: false, desc: "In ginocchio al cavo alto, flessione del busto contro resistenza." },
+      { id: "ex_pallof_press", name: "Pallof press alla puleggia", category: "Core", isCardio: false, desc: "Esercizio anti-rotazionale al cavo o con elastico." },
+      { id: "ex_dead_bug", name: "Dead bug", category: "Core", isCardio: false, desc: "Coordinazione e stabilità core muovendo arti opposti." },
+      { id: "ex_farmer_walk", name: "Farmer walk con manubri", category: "Core", isCardio: false, desc: "Camminata con due manubri pesanti. Lavoro di grip e stabilità totale." },
+      { id: "ex_suitcase_carry", name: "Suitcase carry con un solo manubrio", category: "Core", isCardio: false, desc: "Camminata con carico unilaterale per attivare gli obliqui opposti." },
+
+      // CARDIO
+      { id: "ex_corsa_tapis", name: "Corsa sul tapis roulant", category: "Cardio", isCardio: true, desc: "Corsa indoor." },
+      { id: "ex_camminata_salita", name: "Camminata in salita sul tapis roulant", category: "Cardio", isCardio: true, desc: "Ottimo lavoro aerobico a basso impatto articolare." },
+      { id: "ex_corsa_aperto", name: "Corsa all'aperto", category: "Cardio", isCardio: true, desc: "Corsa outdoor." },
+      { id: "ex_passeggiata", name: "Passeggiata / Camminata", category: "Cardio", isCardio: true, desc: "Attività aerobica leggera." },
+      { id: "ex_montagna", name: "Camminata in montagna / Trekking", category: "Cardio", isCardio: true, desc: "Escursionismo con dislivello." }
+    ];
+
+    /* SCHEDE PREDEFINITE DI DEFAULT */
+    const DEFAULT_WORKOUT_TEMPLATES = {
       "A": {
-        title: "GIORNO A",
+        title: "GIORNO A – Petto / Spalle / Tricipiti / Core",
         isCardio: false,
         exercises: [
-          { name: "PANCA PIANA CON BILANCIERE", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "SPINTE MANUBRI PANCA INCLINATA", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "PUSH-UP PIEDI RIALZATI", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "MILITARY PRESS", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "ALZATE LATERALI", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "ESTENSIONE TRICIPITI", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "CORE ROUTINE 1", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "CORE ROUTINE 2", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] }
+          { name: "Panca piana con bilanciere", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Spinte con manubri su panca inclinata", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Push-up piedi rialzati", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Military press con bilanciere", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Alzate laterali", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Pushdown al cavo", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Plank isometrico", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] }
         ]
       },
       "B": {
-        title: "GIORNO B",
+        title: "GIORNO B – Schiena / Bicipiti / Core",
         isCardio: false,
         exercises: [
-          { name: "Trazioni alla sbarra", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Chest Supported Row", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Single Arm Lat Pulldown", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Face Pull", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Dumbbell Pullover", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Trazioni alla sbarra (presa prona)", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Rematore petto appoggiato su panca 45°", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Single-arm lat pulldown", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Face pull", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Pullover con manubrio", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
           { name: "Curl con manubri", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Hammer Curl", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Core Routine 1", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Core Routine 2", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] }
+          { name: "Hammer curl", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Crunch addominale", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] }
         ]
       },
       "C": {
-        title: "GIORNO C",
+        title: "GIORNO C – Spalle / Gambe / Core",
         isCardio: false,
         exercises: [
-          { name: "Spinte manubri panca inclinata", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Push-up piedi rialzati", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Military Press", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Lat Machine", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Goblet Squat", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Affondi con manubri", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Core Routine 1", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
-          { name: "Core Routine 2", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] }
+          { name: "Spinte con manubri su panca inclinata", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Military press con manubri", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Lat machine larga", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Goblet squat con manubrio", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Affondi camminati / avanti", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] },
+          { name: "Dead bug", setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}] }
         ]
       },
       "CARDIO": {
-        title: "GIORNO CARDIO",
+        title: "GIORNO CARDIO – Corsa / Montagna",
         isCardio: true,
         exercises: [
-          { name: "Corsa su tapis", time: '', dist: '', speed: '' },
-          { name: "Camminata in montagna", time: '', dist: '', speed: '' },
-          { name: "Corsa", time: '', dist: '', speed: '' }
+          { name: "Corsa sul tapis roulant", time: '', dist: '', speed: '' },
+          { name: "Camminata in montagna / Trekking", time: '', dist: '', speed: '' },
+          { name: "Corsa all'aperto", time: '', dist: '', speed: '' }
         ]
       }
     };
@@ -511,13 +823,19 @@
     let activeWorkoutData = null;
     let editingWorkoutId = null;
 
+    /* REGISTRO STATI E PICKER */
+    let pickerTargetMode = null; // 'workout' oppure 'editor'
+    let currentPickerCategory = 'Tutti';
+    let currentArchiveCategory = 'Tutti';
+    let editingTemplateKey = null;
+    let tempEditorExercises = [];
+
     /* LOGICA CRONOMETRO */
     let timerInterval = null;
     let timerSeconds = 0;
     let isTimerRunning = false;
 
     function playTimerAlert() {
-      // Beep sintetico via Web Audio API: nessun file esterno, funziona offline
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         const ctx = new AudioCtx();
@@ -536,11 +854,8 @@
         const now = ctx.currentTime;
         beep(now, 880);
         beep(now + 0.3, 880);
-      } catch (e) {
-        // Web Audio non disponibile: ignoro silenziosamente
-      }
+      } catch (e) {}
 
-      // Vibrazione (dove supportata, es. Android; iOS Safari in genere la ignora)
       if (navigator.vibrate) {
         navigator.vibrate([200, 100, 200]);
       }
@@ -614,6 +929,101 @@
       }
     }
 
+    /* GESTIONE ARCHIVIO LOCALE DEGLI ESERCIZI (MERGE BASE + CUSTOM) */
+    function getFullExerciseDatabase() {
+      let customEx = [];
+      try {
+        customEx = JSON.parse(localStorage.getItem('custom_exercises') || '[]');
+      } catch(e) {
+        customEx = [];
+      }
+      return [...BASE_EXERCISES_DATABASE, ...customEx];
+    }
+
+    function saveCustomExercise() {
+      const name = document.getElementById('new-ex-name').value.trim();
+      const category = document.getElementById('new-ex-cat').value;
+      const desc = document.getElementById('new-ex-desc').value.trim();
+
+      if (!name) {
+        alert("Inserisci il nome dell'esercizio!");
+        return;
+      }
+
+      const isCardio = category === 'Cardio';
+      const newEx = {
+        id: 'custom_ex_' + Date.now(),
+        name: name,
+        category: category,
+        isCardio: isCardio,
+        desc: desc || 'Esercizio personalizzato.'
+      };
+
+      let customEx = JSON.parse(localStorage.getItem('custom_exercises') || '[]');
+      customEx.push(newEx);
+      localStorage.setItem('custom_exercises', JSON.stringify(customEx));
+
+      document.getElementById('new-ex-name').value = '';
+      document.getElementById('new-ex-desc').value = '';
+
+      alert("✅ Esercizio aggiunto all'archivio con successo!");
+      renderArchiveList();
+    }
+
+    /* GESTIONE WORKOUT TEMPLATES */
+    function getWorkoutTemplates() {
+      let saved = null;
+      try {
+        saved = JSON.parse(localStorage.getItem('workout_templates'));
+      } catch(e) {}
+
+      if (!saved || typeof saved !== 'object') {
+        return JSON.parse(JSON.stringify(DEFAULT_WORKOUT_TEMPLATES));
+      }
+      return saved;
+    }
+
+    function populateTemplateSelect() {
+      const select = document.getElementById('workout-select');
+      const templates = getWorkoutTemplates();
+      select.innerHTML = '<option value="">-- Seleziona Giorno --</option>';
+
+      for (const [key, tpl] of Object.entries(templates)) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.innerText = tpl.title || key;
+        select.appendChild(opt);
+      }
+    }
+
+    function loadWorkoutTemplate() {
+      const key = document.getElementById('workout-select').value;
+      const container = document.getElementById('workout-form');
+      const saveCard = document.getElementById('save-card');
+      const addExCard = document.getElementById('add-ex-card');
+      container.innerHTML = '';
+
+      const templates = getWorkoutTemplates();
+
+      if (!key || !templates[key]) {
+        saveCard.style.display = 'none';
+        addExCard.style.display = 'none';
+        activeWorkoutData = null;
+        editingWorkoutId = null;
+        document.getElementById('save-btn').innerText = 'Salva Allenamento';
+        return;
+      }
+
+      if (!editingWorkoutId) {
+        activeWorkoutData = JSON.parse(JSON.stringify(templates[key]));
+      }
+
+      renderExerciseBlocks();
+
+      saveCard.style.display = 'block';
+      addExCard.style.display = 'block';
+    }
+
     function syncCurrentFormToData() {
       if (!activeWorkoutData || !Array.isArray(activeWorkoutData.exercises)) return;
 
@@ -648,32 +1058,6 @@
       activeWorkoutData.exercises[targetIdx] = temp;
 
       renderExerciseBlocks();
-    }
-
-    function loadWorkoutTemplate() {
-      const key = document.getElementById('workout-select').value;
-      const container = document.getElementById('workout-form');
-      const saveCard = document.getElementById('save-card');
-      const addExCard = document.getElementById('add-ex-card');
-      container.innerHTML = '';
-
-      if (!key || !workouts[key]) {
-        saveCard.style.display = 'none';
-        addExCard.style.display = 'none';
-        activeWorkoutData = null;
-        editingWorkoutId = null;
-        document.getElementById('save-btn').innerText = 'Salva Allenamento';
-        return;
-      }
-
-      if (!editingWorkoutId) {
-        activeWorkoutData = JSON.parse(JSON.stringify(workouts[key]));
-      }
-
-      renderExerciseBlocks();
-
-      saveCard.style.display = 'block';
-      addExCard.style.display = 'block';
     }
 
     function renderExerciseBlocks() {
@@ -765,25 +1149,6 @@
       }
     }
 
-    function addNewExercise() {
-      syncCurrentFormToData();
-      if (!activeWorkoutData) return;
-      if (!Array.isArray(activeWorkoutData.exercises)) activeWorkoutData.exercises = [];
-
-      if (activeWorkoutData.isCardio) {
-        activeWorkoutData.exercises.push({
-          name: "NUOVO ESERCIZIO",
-          time: '', dist: '', speed: ''
-        });
-      } else {
-        activeWorkoutData.exercises.push({
-          name: "NUOVO ESERCIZIO",
-          setsData: [{ kg: '', reps: '' }, { kg: '', reps: '' }, { kg: '', reps: '' }]
-        });
-      }
-      renderExerciseBlocks();
-    }
-
     function removeExercise(exIdx) {
       syncCurrentFormToData();
       if (activeWorkoutData && Array.isArray(activeWorkoutData.exercises)) {
@@ -794,6 +1159,335 @@
       }
     }
 
+    function addExerciseToActiveWorkout(exObj) {
+      syncCurrentFormToData();
+      if (!activeWorkoutData) return;
+      if (!Array.isArray(activeWorkoutData.exercises)) activeWorkoutData.exercises = [];
+
+      if (activeWorkoutData.isCardio) {
+        activeWorkoutData.exercises.push({
+          name: exObj.name,
+          time: '', dist: '', speed: ''
+        });
+      } else {
+        activeWorkoutData.exercises.push({
+          name: exObj.name,
+          setsData: [{ kg: '', reps: '' }, { kg: '', reps: '' }, { kg: '', reps: '' }]
+        });
+      }
+      renderExerciseBlocks();
+    }
+
+    /* SISTEMA SELETTORE A TUTTO SCHERMO (FULLSCREEN PICKER) */
+    function openPickerForWorkout() {
+      pickerTargetMode = 'workout';
+      document.getElementById('picker-modal').classList.add('active');
+      setupPickerCategories();
+      renderPickerList();
+    }
+
+    function openPickerForTemplateEditor() {
+      pickerTargetMode = 'editor';
+      document.getElementById('picker-modal').classList.add('active');
+      setupPickerCategories();
+      renderPickerList();
+    }
+
+    function closePickerModal() {
+      document.getElementById('picker-modal').classList.remove('active');
+    }
+
+    function setupPickerCategories() {
+      const cats = ['Tutti', 'Petto', 'Spalle', 'Dorso', 'Bicipiti', 'Tricipiti', 'Gambe', 'Core', 'Cardio'];
+      const container = document.getElementById('picker-category-chips');
+      container.innerHTML = '';
+
+      cats.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = `chip ${currentPickerCategory === c ? 'active' : ''}`;
+        btn.innerText = c;
+        btn.onclick = () => {
+          currentPickerCategory = c;
+          setupPickerCategories();
+          renderPickerList();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function renderPickerList() {
+      const listEl = document.getElementById('picker-list');
+      const search = document.getElementById('picker-search').value.toLowerCase().trim();
+      const allEx = getFullExerciseDatabase();
+
+      const filtered = allEx.filter(ex => {
+        const matchesCat = (currentPickerCategory === 'Tutti') || (ex.category === currentPickerCategory);
+        const matchesSearch = ex.name.toLowerCase().includes(search) || ex.category.toLowerCase().includes(search);
+        return matchesCat && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">Nessun esercizio trovato.</p>';
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(ex => {
+        html += `
+          <div class="db-ex-item" style="padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: bold; color: var(--accent);">${escapeHtml(ex.name)} <span class="badge">${ex.category}</span></div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">${escapeHtml(ex.desc || '')}</div>
+            </div>
+            <button class="btn btn-sm" onclick="selectExerciseFromPicker('${ex.id}')">Seleziona +</button>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    }
+
+    function selectExerciseFromPicker(exId) {
+      const allEx = getFullExerciseDatabase();
+      const exObj = allEx.find(e => e.id === exId);
+      if (!exObj) return;
+
+      if (pickerTargetMode === 'workout') {
+        addExerciseToActiveWorkout(exObj);
+      } else if (pickerTargetMode === 'editor') {
+        addExerciseToTemplateEditor(exObj);
+      }
+
+      closePickerModal();
+    }
+
+    /* ARCHIVIO ESERCIZI MODALE (CONSULTAZIONE) */
+    function openExerciseArchiveModal() {
+      document.getElementById('archive-modal').classList.add('active');
+      setupArchiveCategories();
+      renderArchiveList();
+    }
+
+    function closeExerciseArchiveModal() {
+      document.getElementById('archive-modal').classList.remove('active');
+    }
+
+    function setupArchiveCategories() {
+      const cats = ['Tutti', 'Petto', 'Spalle', 'Dorso', 'Bicipiti', 'Tricipiti', 'Gambe', 'Core', 'Cardio'];
+      const container = document.getElementById('archive-category-chips');
+      container.innerHTML = '';
+
+      cats.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = `chip ${currentArchiveCategory === c ? 'active' : ''}`;
+        btn.innerText = c;
+        btn.onclick = () => {
+          currentArchiveCategory = c;
+          setupArchiveCategories();
+          renderArchiveList();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function renderArchiveList() {
+      const listEl = document.getElementById('archive-list');
+      const search = document.getElementById('archive-search').value.toLowerCase().trim();
+      const allEx = getFullExerciseDatabase();
+
+      const filtered = allEx.filter(ex => {
+        const matchesCat = (currentArchiveCategory === 'Tutti') || (ex.category === currentArchiveCategory);
+        const matchesSearch = ex.name.toLowerCase().includes(search) || ex.category.toLowerCase().includes(search);
+        return matchesCat && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:20px;">Nessun esercizio nell\'archivio.</p>';
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(ex => {
+        const ytQuery = encodeURIComponent(`esecuzione esercizio ${ex.name}`);
+        const ytUrl = `https://www.youtube.com/results?search_query=${ytQuery}`;
+
+        html += `
+          <div class="db-ex-item" id="archive-item-${ex.id}">
+            <div class="db-ex-summary" onclick="toggleArchiveDetails('${ex.id}')">
+              <div class="history-title-row">
+                <div class="history-title">${escapeHtml(ex.name)} <span class="badge">${ex.category}</span></div>
+                <span class="toggle-icon">▼ Spiegazione</span>
+              </div>
+            </div>
+            <div class="db-ex-details">
+              <p>${escapeHtml(ex.desc || 'Nessuna descrizione disponibile.')}</p>
+              <a class="video-link" href="${ytUrl}" target="_blank" rel="noopener">🎥 Cerca video esecuzione su YouTube ↗</a>
+            </div>
+          </div>
+        `;
+      });
+      listEl.innerHTML = html;
+    }
+
+    function toggleArchiveDetails(id) {
+      const el = document.getElementById(`archive-item-${id}`);
+      if (el) el.classList.toggle('open');
+    }
+
+    /* GESTORE SCHEDE PERSONALI (WORKOUT BUILDER) */
+    function openTemplateManagerModal() {
+      document.getElementById('template-manager-modal').classList.add('active');
+      renderTemplateList();
+    }
+
+    function closeTemplateManagerModal() {
+      document.getElementById('template-manager-modal').classList.remove('active');
+      closeTemplateEditor();
+      populateTemplateSelect();
+    }
+
+    function renderTemplateList() {
+      const container = document.getElementById('templates-container');
+      const templates = getWorkoutTemplates();
+      container.innerHTML = '';
+
+      for (const [key, tpl] of Object.entries(templates)) {
+        const div = document.createElement('div');
+        div.className = 'template-item';
+        div.innerHTML = `
+          <div>
+            <strong style="color:var(--accent);">${escapeHtml(tpl.title)}</strong>
+            <div style="font-size:0.8rem; color:var(--text-muted);">${tpl.exercises ? tpl.exercises.length : 0} Esercizi ${tpl.isCardio ? '(Cardio)' : ''}</div>
+          </div>
+          <div class="history-actions">
+            <button class="btn btn-sm btn-secondary" onclick="openTemplateEditor('${key}')">Modifica</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${key}')">Elimina</button>
+          </div>
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    function openTemplateEditor(key) {
+      editingTemplateKey = key;
+      const templates = getWorkoutTemplates();
+
+      document.getElementById('template-list-view').style.display = 'none';
+      document.getElementById('template-editor-view').style.display = 'block';
+
+      if (key && templates[key]) {
+        const tpl = templates[key];
+        document.getElementById('editor-title').innerText = `Modifica: ${tpl.title}`;
+        document.getElementById('editor-template-title').value = tpl.title;
+        document.getElementById('editor-template-is-cardio').checked = !!tpl.isCardio;
+        tempEditorExercises = JSON.parse(JSON.stringify(tpl.exercises || []));
+      } else {
+        document.getElementById('editor-title').innerText = 'Nuova Scheda Personale';
+        document.getElementById('editor-template-title').value = '';
+        document.getElementById('editor-template-is-cardio').checked = false;
+        tempEditorExercises = [];
+      }
+
+      renderEditorExercisesList();
+    }
+
+    function closeTemplateEditor() {
+      editingTemplateKey = null;
+      tempEditorExercises = [];
+      document.getElementById('template-list-view').style.display = 'block';
+      document.getElementById('template-editor-view').style.display = 'none';
+      renderTemplateList();
+    }
+
+    function toggleEditorCardioMode() {
+      const isCardio = document.getElementById('editor-template-is-cardio').checked;
+      tempEditorExercises.forEach(ex => {
+        if (isCardio) {
+          delete ex.setsData;
+          ex.time = ''; ex.dist = ''; ex.speed = '';
+        } else {
+          delete ex.time; delete ex.dist; delete ex.speed;
+          ex.setsData = [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}];
+        }
+      });
+      renderEditorExercisesList();
+    }
+
+    function renderEditorExercisesList() {
+      const container = document.getElementById('editor-exercises-list');
+      container.innerHTML = '';
+
+      if (tempEditorExercises.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:10px;">Nessun esercizio presente in questa scheda.</p>';
+        return;
+      }
+
+      const isCardio = document.getElementById('editor-template-is-cardio').checked;
+
+      tempEditorExercises.forEach((ex, idx) => {
+        const div = document.createElement('div');
+        div.className = 'exercise-block';
+        div.innerHTML = `
+          <div class="exercise-header">
+            <span style="font-weight:bold; color:var(--accent);">${idx + 1}. ${escapeHtml(ex.name)}</span>
+            <button class="btn btn-sm btn-danger" onclick="removeExerciseFromEditor(${idx})">Rimuovi</button>
+          </div>
+          ${!isCardio ? `<div style="font-size:0.8rem; color:var(--text-muted);">Serie predefinite: ${ex.setsData ? ex.setsData.length : 3}</div>` : ''}
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function addExerciseToTemplateEditor(exObj) {
+      const isCardio = document.getElementById('editor-template-is-cardio').checked;
+      if (isCardio) {
+        tempEditorExercises.push({ name: exObj.name, time: '', dist: '', speed: '' });
+      } else {
+        tempEditorExercises.push({
+          name: exObj.name,
+          setsData: [{kg:'', reps:''},{kg:'', reps:''},{kg:'', reps:''}]
+        });
+      }
+      renderEditorExercisesList();
+    }
+
+    function removeExerciseFromEditor(idx) {
+      tempEditorExercises.splice(idx, 1);
+      renderEditorExercisesList();
+    }
+
+    function saveTemplateFromEditor() {
+      const title = document.getElementById('editor-template-title').value.trim();
+      const isCardio = document.getElementById('editor-template-is-cardio').checked;
+
+      if (!title) {
+        alert("Inserisci un titolo per la scheda!");
+        return;
+      }
+
+      let templates = getWorkoutTemplates();
+      const key = editingTemplateKey || ('CUSTOM_' + Date.now());
+
+      templates[key] = {
+        title: title,
+        isCardio: isCardio,
+        exercises: tempEditorExercises
+      };
+
+      localStorage.setItem('workout_templates', JSON.stringify(templates));
+      alert("✅ Scheda salvata con successo!");
+      closeTemplateEditor();
+    }
+
+    function deleteTemplate(key) {
+      if (confirm("Sei sicuro di voler eliminare questa scheda?")) {
+        let templates = getWorkoutTemplates();
+        delete templates[key];
+        localStorage.setItem('workout_templates', JSON.stringify(templates));
+        renderTemplateList();
+      }
+    }
+
+    /* SALVATAGGIO WORKOUT NEL LOG STORICO */
     function saveWorkout() {
       try {
         const key = document.getElementById('workout-select').value;
@@ -809,9 +1503,11 @@
           return;
         }
 
+        const templates = getWorkoutTemplates();
+
         if (!activeWorkoutData || !Array.isArray(activeWorkoutData.exercises)) {
-          if (workouts[key]) {
-            activeWorkoutData = JSON.parse(JSON.stringify(workouts[key]));
+          if (templates[key]) {
+            activeWorkoutData = JSON.parse(JSON.stringify(templates[key]));
           } else {
             activeWorkoutData = { title: "ALLENAMENTO", isCardio: false, exercises: [] };
           }
@@ -857,11 +1553,7 @@
         let history = [];
         const rawStorage = localStorage.getItem('workout_history');
         if (rawStorage) {
-          try {
-            history = JSON.parse(rawStorage);
-          } catch(e) {
-            history = [];
-          }
+          try { history = JSON.parse(rawStorage); } catch(e) { history = []; }
         }
 
         if (editingWorkoutId) {
@@ -921,16 +1613,13 @@
       try {
         const raw = localStorage.getItem('workout_history');
         if (raw) history = JSON.parse(raw);
-      } catch(e) {
-        history = [];
-      }
+      } catch(e) { history = []; }
 
       if (!Array.isArray(history) || history.length === 0) {
         historyList.innerHTML = '<p style="color: var(--text-muted); text-align: center;">Nessun allenamento registrato.</p>';
         return;
       }
 
-      // Filtraggio
       const filteredHistory = history.filter(item => {
         if (!searchQuery) return true;
 
@@ -1048,8 +1737,6 @@
       document.getElementById('add-ex-card').style.display = 'block';
       document.getElementById('save-btn').innerText = 'Aggiorna Allenamento';
 
-      // Bug fix: durante la modifica di una sessione, blocco il cambio scheda
-      // per evitare di salvare esercizi vecchi con una workoutKey diversa
       document.getElementById('workout-select').disabled = true;
       document.getElementById('cancel-edit-btn').style.display = 'block';
     }
@@ -1088,9 +1775,15 @@
       }
     }
 
+    /* EXPORT & IMPORT INCLUSO BACKUP DI SCHEDE E CUSTOM EXERCISES */
     function exportData() {
-      const history = localStorage.getItem('workout_history') || '[]';
-      const blob = new Blob([history], { type: 'application/json' });
+      const exportObject = {
+        history: JSON.parse(localStorage.getItem('workout_history') || '[]'),
+        customExercises: JSON.parse(localStorage.getItem('custom_exercises') || '[]'),
+        templates: JSON.parse(localStorage.getItem('workout_templates') || '{}')
+      };
+
+      const blob = new Blob([JSON.stringify(exportObject, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -1099,6 +1792,49 @@
 
       localStorage.setItem('last_export_date', new Date().toISOString());
       checkBackupReminder();
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+
+          if (Array.isArray(imported)) {
+            // Compatibilità vecchio formato
+            let currentHistory = JSON.parse(localStorage.getItem('workout_history') || '[]');
+            let merged = [...imported, ...currentHistory];
+            const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
+            unique.sort((a, b) => new Date(b.date) - new Date(a.date));
+            localStorage.setItem('workout_history', JSON.stringify(unique));
+          } else if (imported && typeof imported === 'object') {
+            // Nuovo formato completo
+            if (imported.history && Array.isArray(imported.history)) {
+              let currentHistory = JSON.parse(localStorage.getItem('workout_history') || '[]');
+              let merged = [...imported.history, ...currentHistory];
+              const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
+              unique.sort((a, b) => new Date(b.date) - new Date(a.date));
+              localStorage.setItem('workout_history', JSON.stringify(unique));
+            }
+            if (imported.customExercises && Array.isArray(imported.customExercises)) {
+              localStorage.setItem('custom_exercises', JSON.stringify(imported.customExercises));
+            }
+            if (imported.templates && typeof imported.templates === 'object') {
+              localStorage.setItem('workout_templates', JSON.stringify(imported.templates));
+            }
+          }
+
+          alert('Importazione completata con successo!');
+          populateTemplateSelect();
+          renderHistory();
+        } catch (err) {
+          alert('Errore nella lettura del file JSON.');
+        }
+      };
+      reader.readAsText(file);
     }
 
     function checkBackupReminder() {
@@ -1126,45 +1862,23 @@
       }
     }
 
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (Array.isArray(imported)) {
-            let currentHistory = JSON.parse(localStorage.getItem('workout_history') || '[]');
-            let merged = [...imported, ...currentHistory];
-            const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
-            unique.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            localStorage.setItem('workout_history', JSON.stringify(unique));
-            alert('Importazione completata con successo!');
-            renderHistory();
-          } else {
-            alert('Formato file non valido.');
-          }
-        } catch (err) {
-          alert('Errore nella lettura del file JSON.');
-        }
-      };
-      reader.readAsText(file);
-    }
-
     function checkStorageDebug() {
-      const raw = localStorage.getItem('workout_history');
-      if (!raw) {
-        alert("🔍 MEMORIA VUOTA: Nessun dato salvato.");
-      } else {
-        const parsed = JSON.parse(raw);
-        alert(`🔍 DIAGNOSTICA MEMORIA:\n\n- Dimensione dati: ${(raw.length / 1024).toFixed(2)} KB\n- Numero sessioni salvate: ${parsed.length}`);
-      }
+      const rawHistory = localStorage.getItem('workout_history') || '[]';
+      const rawCustom = localStorage.getItem('custom_exercises') || '[]';
+      const rawTemplates = localStorage.getItem('workout_templates') || '{}';
+      
+      const parsedH = JSON.parse(rawHistory);
+      const parsedC = JSON.parse(rawCustom);
+      const parsedT = JSON.parse(rawTemplates);
+
+      const totalKB = ((rawHistory.length + rawCustom.length + rawTemplates.length) / 1024).toFixed(2);
+
+      alert(`🔍 DIAGNOSTICA MEMORIA:\n\n- Dimensione dati: ${totalKB} KB\n- Sessione salvate: ${parsedH.length}\n- Esercizi personalizzati: ${parsedC.length}\n- Schede configurate: ${Object.keys(parsedT).length}`);
     }
 
     window.onload = function() {
       setDefaultDateTime();
+      populateTemplateSelect();
       renderHistory();
       checkBackupReminder();
     };
