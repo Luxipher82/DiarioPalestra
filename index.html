@@ -116,21 +116,25 @@
       overflow: hidden;
       box-shadow: inset 0 2px 4px rgba(0,0,0,0.7), inset 0 -1px 0 rgba(255,255,255,0.05);
       border: 1px solid #000;
+      position: relative;
+    }
+
+    .timer-bar-wrap::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 50%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0));
+      pointer-events: none;
     }
 
     .timer-bar-fill {
       height: 100%;
       width: 0%;
       border-radius: 8px 0 0 8px;
-      background: linear-gradient(180deg, #ffd54f 0%, var(--accent) 45%, #c66900 100%);
-      box-shadow: inset 0 2px 3px rgba(255,255,255,0.4), inset 0 -3px 4px rgba(0,0,0,0.35), 0 0 6px rgba(255,152,0,0.5);
-      transition: width 1s linear, background 0.3s ease;
+      background: var(--accent2);
+      transition: width 1s linear, background-color 1s linear;
     }
 
-    .timer-bar-fill.timer-bar-idle {
-      width: 0%;
-      box-shadow: none;
-    }
 
     .timer-display {
       font-family: monospace;
@@ -434,6 +438,13 @@
 
     .fullscreen-modal.active {
       display: flex;
+    }
+
+    /* Il picker esercizi può essere aperto sopra altre modali (es. Gestisci Schede):
+       deve restare sempre in primo piano */
+    #picker-modal {
+      z-index: 99999 !important;
+      position: fixed !important;
     }
 
     .modal-header {
@@ -936,6 +947,17 @@
       }
     }
 
+    const TIMER_COLOR_START = [244, 67, 54];  // rosso (--danger) - inizio recupero
+    const TIMER_COLOR_END = [33, 150, 243];   // blu (--info) - fine recupero
+
+    function interpolateColor(c1, c2, t) {
+      t = Math.max(0, Math.min(1, t));
+      const r = Math.round(c1[0] + (c2[0] - c1[0]) * t);
+      const g = Math.round(c1[1] + (c2[1] - c1[1]) * t);
+      const b = Math.round(c1[2] + (c2[2] - c1[2]) * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
     function updateTimerDisplay() {
       const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
       const secs = (timerSeconds % 60).toString().padStart(2, '0');
@@ -943,11 +965,13 @@
 
       const fillEl = document.getElementById('timer-bar-fill');
       if (timerTotalSeconds > 0) {
-        const pct = Math.max(0, Math.min(100, (timerSeconds / timerTotalSeconds) * 100));
-        fillEl.classList.remove('timer-bar-idle');
-        fillEl.style.width = pct + '%';
+        const pctRemaining = Math.max(0, Math.min(100, (timerSeconds / timerTotalSeconds) * 100));
+        const elapsedFraction = 1 - (pctRemaining / 100); // 0 = appena partito, 1 = tempo scaduto
+        fillEl.style.width = pctRemaining + '%';
+        fillEl.style.background = interpolateColor(TIMER_COLOR_START, TIMER_COLOR_END, elapsedFraction);
       } else {
-        fillEl.classList.add('timer-bar-idle');
+        // Modalità cronometro (o reset): niente da mostrare, barra sempre azzerata esplicitamente
+        fillEl.style.width = '0%';
       }
     }
 
@@ -959,6 +983,7 @@
       } else {
         isTimerRunning = true;
         timerTotalSeconds = 0;
+        updateTimerDisplay();
         document.getElementById('timer-toggle-btn').innerText = 'Pausa';
         timerInterval = setInterval(() => {
           timerSeconds++;
@@ -1271,22 +1296,35 @@
     }
 
     /* SISTEMA SELETTORE A TUTTO SCHERMO (FULLSCREEN PICKER) */
-    function openPickerForWorkout() {
-      pickerTargetMode = 'workout';
-      document.getElementById('picker-modal').classList.add('active');
+    function showPickerModal(targetMode) {
+      pickerTargetMode = targetMode;
+      const picker = document.getElementById('picker-modal');
+
+      // Il picker deve stare sempre nell'ultimo livello del DOM, direttamente
+      // sotto <body>, così non può essere intrappolato nello stacking context
+      // della modale Gestione Schede o di altri contenitori.
+      if (picker.parentElement !== document.body) {
+        document.body.appendChild(picker);
+      }
+
+      picker.style.zIndex = '99999';
+      picker.style.position = 'fixed';
+      picker.classList.add('active');
       setupPickerCategories();
       renderPickerList();
     }
 
+    function openPickerForWorkout() {
+      showPickerModal('workout');
+    }
+
     function openPickerForTemplateEditor() {
-      pickerTargetMode = 'editor';
-      document.getElementById('picker-modal').classList.add('active');
-      setupPickerCategories();
-      renderPickerList();
+      showPickerModal('editor');
     }
 
     function closePickerModal() {
       document.getElementById('picker-modal').classList.remove('active');
+      pickerTargetMode = null;
     }
 
     function setupPickerCategories() {
