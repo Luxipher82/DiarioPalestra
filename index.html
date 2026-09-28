@@ -137,6 +137,80 @@
       transition: width 1s linear, background-color 1s linear;
     }
 
+    #toast-container {
+      position: fixed;
+      left: 50%;
+      bottom: 78px;
+      transform: translateX(-50%);
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+      width: calc(100% - 32px);
+      max-width: 420px;
+      pointer-events: none;
+    }
+    .app-toast {
+      background: #222;
+      color: #fff;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      line-height: 1.35;
+      white-space: pre-line;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      max-width: 100%;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .app-toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .app-confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 4000;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      padding: 20px;
+    }
+    .app-confirm-overlay.show {
+      opacity: 1;
+    }
+    .app-confirm-box {
+      background: #1e1e1e;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      max-width: 340px;
+      width: 100%;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .app-confirm-message {
+      margin-bottom: 16px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      color: var(--text);
+      white-space: pre-line;
+    }
+    .app-confirm-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
     .timer-display {
       font-family: monospace;
       font-size: 1.1rem;
@@ -679,6 +753,10 @@
         <input type="number" id="profile-weekly-workouts" min="0" max="14" step="1" placeholder="Es. 3">
       </div>
 
+      <div class="card" id="weight-reminder-card" style="display:none; border-color: var(--accent);">
+        <p id="weight-reminder-text" style="color: var(--accent); font-size: 0.9rem;"></p>
+      </div>
+
       <div class="card">
         <h2>Peso</h2>
         <div style="display:flex; gap:8px; margin-bottom:10px; align-items:center;">
@@ -690,20 +768,26 @@
           <span class="small-note">IMC (Indice di Massa Corporea):</span> <strong id="profile-bmi-value"></strong>
         </div>
 
-        <div class="chart-wrap">
-          <svg id="profile-weight-chart" viewBox="0 0 700 160" preserveAspectRatio="none" style="width:100%; height:160px;"></svg>
+        <div class="chart-wrap" style="border:1px solid var(--border); border-radius:6px; padding:6px;">
+          <svg id="profile-weight-chart" viewBox="0 0 700 160" preserveAspectRatio="none" style="width:100%; height:160px; display:block;"></svg>
         </div>
 
-        <div id="profile-weight-list" style="margin-top:10px;"></div>
+        <h3 style="margin-top:16px; margin-bottom:6px; font-size:0.95rem; color:var(--text-muted); border-top:1px solid var(--border); padding-top:12px;">Storico pesate</h3>
+        <div id="profile-weight-list"></div>
       </div>
 
       <button class="btn" style="width:100%; margin-bottom:15px;" onclick="saveUserProfileBasic()">Salva Profilo</button>
+      <button class="btn btn-secondary" style="width:100%; margin-bottom:15px;" onclick="resetUserProfile()">Reset Profilo</button>
     </section>
 
   </div>
 
   <!-- NAVIGATION BAR -->
   <nav>
+    <button id="nav-profile" class="active" onclick="switchTab('profile-tab')">
+      <span>👤</span>
+      <span>Profilo</span>
+    </button>
     <button id="nav-workout" onclick="switchTab('workout-tab')">
       <span>🏋️</span>
       <span>Allenamento</span>
@@ -711,10 +795,6 @@
     <button id="nav-history" onclick="switchTab('history-tab')">
       <span>📜</span>
       <span>Storico</span>
-    </button>
-    <button id="nav-profile" class="active" onclick="switchTab('profile-tab')">
-      <span>👤</span>
-      <span>Profilo</span>
     </button>
     <button id="nav-templates" onclick="openTemplateManagerModal()">
       <span>⚙️</span>
@@ -1023,6 +1103,52 @@
     let isTimerRunning = false;
     let timerTotalSeconds = 0;
 
+    function showConfirmModal(message, onConfirm, confirmLabel) {
+      const overlay = document.createElement('div');
+      overlay.className = 'app-confirm-overlay';
+      overlay.innerHTML = `
+        <div class="app-confirm-box">
+          <p class="app-confirm-message"></p>
+          <div class="app-confirm-actions">
+            <button class="btn btn-secondary app-confirm-cancel">Annulla</button>
+            <button class="btn btn-danger app-confirm-ok">${confirmLabel || 'Conferma'}</button>
+          </div>
+        </div>
+      `;
+      overlay.querySelector('.app-confirm-message').textContent = message;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add('show'));
+
+      function close() {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 200);
+      }
+      overlay.querySelector('.app-confirm-cancel').onclick = close;
+      overlay.querySelector('.app-confirm-ok').onclick = () => { close(); onConfirm(); };
+      overlay.onclick = (e) => { if (e.target === overlay) close(); };
+    }
+
+    function showToast(message, duration) {
+      duration = duration || 2600;
+      let container = document.getElementById('toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+      }
+      const toast = document.createElement('div');
+      toast.className = 'app-toast';
+      toast.textContent = message;
+      const dismiss = () => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      };
+      toast.onclick = dismiss;
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(dismiss, duration);
+    }
+
     function playTimerAlert() {
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -1184,7 +1310,7 @@
       const desc = document.getElementById('new-ex-desc').value.trim();
 
       if (!name) {
-        alert("Inserisci il nome dell'esercizio!");
+        showToast("Inserisci il nome dell'esercizio!");
         return;
       }
 
@@ -1206,7 +1332,7 @@
       document.getElementById('new-ex-desc').value = '';
       document.getElementById('new-ex-allow-weight').checked = false;
 
-      alert("✅ Esercizio aggiunto all'archivio con successo!");
+      showToast("✅ Esercizio aggiunto all'archivio con successo!");
       renderArchiveList();
     }
 
@@ -1328,24 +1454,47 @@
       profile.height = document.getElementById('profile-height').value;
       profile.lifestyle = document.getElementById('profile-lifestyle').value;
       profile.weeklyWorkouts = document.getElementById('profile-weekly-workouts').value;
-      localStorage.setItem('user_profile', JSON.stringify(profile));
-      alert('Profilo salvato.');
+      try {
+        localStorage.setItem('user_profile', JSON.stringify(profile));
+      } catch (e) {
+        showToast('Errore nel salvataggio del profilo: ' + e.message);
+        return;
+      }
       renderProfileTab();
+      showToast(profile.name ? `Profilo salvato, ${profile.name}!` : 'Profilo salvato.');
     }
 
     function addWeightEntry() {
       const input = document.getElementById('profile-weight-input');
       const val = parseFloat(String(input.value).replace(',', '.'));
-      if (!Number.isFinite(val) || val <= 0) { alert('Inserisci un peso valido.'); return; }
+      if (!Number.isFinite(val) || val <= 0) { showToast('Inserisci un peso valido.'); return; }
       const profile = getUserProfile();
       const today = new Date().toISOString().slice(0, 10);
       const existingIdx = profile.weightHistory.findIndex(w => (w.date || '').slice(0, 10) === today);
       if (existingIdx >= 0) profile.weightHistory[existingIdx].weight = val;
       else profile.weightHistory.push({ date: new Date().toISOString(), weight: val });
       profile.weightHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
-      localStorage.setItem('user_profile', JSON.stringify(profile));
+      try {
+        localStorage.setItem('user_profile', JSON.stringify(profile));
+      } catch (e) {
+        showToast('Errore nel salvataggio del peso: ' + e.message);
+        return;
+      }
       input.value = '';
       renderProfileTab();
+      showToast(profile.name ? `Pesata registrata, ${profile.name}!` : 'Pesata registrata.');
+    }
+
+    function resetUserProfile() {
+      showConfirmModal(
+        "Vuoi azzerare tutti i dati del profilo (nome, altezza, stile di vita, allenamenti/settimana e storico peso)? L'operazione non è reversibile.",
+        () => {
+          localStorage.removeItem('user_profile');
+          renderProfileTab();
+          showToast('Profilo azzerato.');
+        },
+        'Azzera'
+      );
     }
 
     function deleteWeightEntry(index) {
@@ -1401,28 +1550,63 @@
       }
 
       drawWeightChart(profile.weightHistory);
+      checkWeightReminder();
+    }
+
+    function checkWeightReminder() {
+      const card = document.getElementById('weight-reminder-card');
+      const text = document.getElementById('weight-reminder-text');
+      if (!card || !text) return;
+      const profile = getUserProfile();
+      const REMINDER_DAYS = 14;
+
+      if (!profile.weightHistory.length) { card.style.display = 'none'; return; }
+
+      const lastEntry = profile.weightHistory[profile.weightHistory.length - 1];
+      const lastDate = new Date(lastEntry.date);
+      const daysSince = Math.floor((Date.now() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysSince >= REMINDER_DAYS) {
+        card.style.display = 'block';
+        text.textContent = `⚖️ Sono passati ${daysSince} giorni dall'ultima pesata. Registra il tuo peso per tenere aggiornato lo storico.`;
+      } else {
+        card.style.display = 'none';
+      }
     }
 
     function drawWeightChart(weightHistory) {
       const svg = document.getElementById('profile-weight-chart');
       if (!svg) return;
       svg.innerHTML = '';
-      if (!Array.isArray(weightHistory) || weightHistory.length < 2) return;
       const NS = 'http://www.w3.org/2000/svg', W = 700, H = 160, p = { l: 36, r: 14, t: 14, b: 26 };
+
+      if (!Array.isArray(weightHistory) || weightHistory.length === 0) {
+        const msg = document.createElementNS(NS, 'text');
+        msg.setAttribute('x', W / 2); msg.setAttribute('y', H / 2);
+        msg.setAttribute('text-anchor', 'middle'); msg.setAttribute('font-size', '13');
+        msg.setAttribute('fill', 'var(--text-muted)');
+        msg.textContent = 'Registra il tuo peso per iniziare il grafico';
+        svg.appendChild(msg);
+        return;
+      }
+
       const weights = weightHistory.map(w => w.weight);
       let min = Math.min(...weights), max = Math.max(...weights);
       if (min === max) { min -= 1; max += 1; }
-      const x = i => p.l + i * (W - p.l - p.r) / Math.max(1, weightHistory.length - 1);
+      const n = weightHistory.length;
+      const x = i => n === 1 ? W / 2 : p.l + i * (W - p.l - p.r) / (n - 1);
       const y = v => H - p.b - (v - min) / (max - min) * (H - p.t - p.b);
 
-      const line = document.createElementNS(NS, 'polyline');
-      line.setAttribute('fill', 'none'); line.setAttribute('stroke', 'var(--accent)'); line.setAttribute('stroke-width', '2');
-      line.setAttribute('points', weightHistory.map((w, i) => `${x(i)},${y(w.weight)}`).join(' '));
-      svg.appendChild(line);
+      if (n > 1) {
+        const line = document.createElementNS(NS, 'polyline');
+        line.setAttribute('fill', 'none'); line.setAttribute('stroke', 'var(--accent)'); line.setAttribute('stroke-width', '2');
+        line.setAttribute('points', weightHistory.map((w, i) => `${x(i)},${y(w.weight)}`).join(' '));
+        svg.appendChild(line);
+      }
 
       weightHistory.forEach((w, i) => {
         const c = document.createElementNS(NS, 'circle');
-        c.setAttribute('cx', x(i)); c.setAttribute('cy', y(w.weight)); c.setAttribute('r', '3'); c.setAttribute('fill', 'var(--accent)');
+        c.setAttribute('cx', x(i)); c.setAttribute('cy', y(w.weight)); c.setAttribute('r', '4'); c.setAttribute('fill', 'var(--accent)');
         const t = document.createElementNS(NS, 'title');
         const d = new Date(w.date);
         t.textContent = `${isNaN(d.getTime()) ? '' : d.toLocaleDateString('it-IT')}: ${w.weight} kg`;
@@ -1430,8 +1614,17 @@
         svg.appendChild(c);
       });
 
-      const minLbl = document.createElementNS(NS, 'text'); minLbl.setAttribute('x', 2); minLbl.setAttribute('y', y(min)); minLbl.setAttribute('font-size', '10'); minLbl.setAttribute('fill', 'var(--text-muted)'); minLbl.textContent = min.toFixed(1); svg.appendChild(minLbl);
-      const maxLbl = document.createElementNS(NS, 'text'); maxLbl.setAttribute('x', 2); maxLbl.setAttribute('y', y(max) + 4); maxLbl.setAttribute('font-size', '10'); maxLbl.setAttribute('fill', 'var(--text-muted)'); maxLbl.textContent = max.toFixed(1); svg.appendChild(maxLbl);
+      if (n === 1) {
+        const hint = document.createElementNS(NS, 'text');
+        hint.setAttribute('x', W / 2); hint.setAttribute('y', H - 6);
+        hint.setAttribute('text-anchor', 'middle'); hint.setAttribute('font-size', '11');
+        hint.setAttribute('fill', 'var(--text-muted)');
+        hint.textContent = `Primo peso registrato: ${weights[0]} kg — aggiungine un altro per vedere l'andamento`;
+        svg.appendChild(hint);
+      } else {
+        const minLbl = document.createElementNS(NS, 'text'); minLbl.setAttribute('x', 2); minLbl.setAttribute('y', y(min)); minLbl.setAttribute('font-size', '10'); minLbl.setAttribute('fill', 'var(--text-muted)'); minLbl.textContent = min.toFixed(1); svg.appendChild(minLbl);
+        const maxLbl = document.createElementNS(NS, 'text'); maxLbl.setAttribute('x', 2); maxLbl.setAttribute('y', y(max) + 4); maxLbl.setAttribute('font-size', '10'); maxLbl.setAttribute('fill', 'var(--text-muted)'); maxLbl.textContent = max.toFixed(1); svg.appendChild(maxLbl);
+      }
     }
 
     function syncCurrentFormToData() {
@@ -1627,10 +1820,11 @@
     function removeExercise(exIdx) {
       syncCurrentFormToData();
       if (activeWorkoutData && Array.isArray(activeWorkoutData.exercises)) {
-        if (confirm(`Vuoi rimuovere "${activeWorkoutData.exercises[exIdx].name}"?`)) {
+        const exName = activeWorkoutData.exercises[exIdx].name;
+        showConfirmModal(`Vuoi rimuovere "${exName}"?`, () => {
           activeWorkoutData.exercises.splice(exIdx, 1);
           renderExerciseBlocks();
-        }
+        }, 'Rimuovi');
       }
     }
 
@@ -1972,17 +2166,17 @@
     function removeExerciseFromEditor(idx){tempEditorExercises.splice(idx,1);renderEditorExercisesList();}
     function saveTemplateFromEditor(){
       const title=document.getElementById('editor-template-title').value.trim(),goal=document.getElementById('editor-template-goal').value,isCardio=document.getElementById('editor-template-is-cardio').checked,notes=document.getElementById('editor-template-notes').value.trim();
-      if(!title){alert('Inserisci un titolo per la scheda!');return;} let templates=getWorkoutTemplates(),key=editingTemplateKey||('CUSTOM_'+Date.now()),existingCreatedAt=editingTemplateKey&&templates[key]?templates[key].createdAt:null;
-      templates[key]={title,goal,isCardio,notes,exercises:normalizeTemplate({isCardio,goal,exercises:tempEditorExercises}).exercises,createdAt:existingCreatedAt||new Date().toISOString()};localStorage.setItem('workout_templates',JSON.stringify(templates));alert('✅ Scheda salvata con successo!');closeTemplateEditor();populateTemplateSelect();
+      if(!title){showToast('Inserisci un titolo per la scheda!');return;} let templates=getWorkoutTemplates(),key=editingTemplateKey||('CUSTOM_'+Date.now()),existingCreatedAt=editingTemplateKey&&templates[key]?templates[key].createdAt:null;
+      templates[key]={title,goal,isCardio,notes,exercises:normalizeTemplate({isCardio,goal,exercises:tempEditorExercises}).exercises,createdAt:existingCreatedAt||new Date().toISOString()};localStorage.setItem('workout_templates',JSON.stringify(templates));showToast('✅ Scheda salvata con successo!');closeTemplateEditor();populateTemplateSelect();
     }
 
     function deleteTemplate(key) {
-      if (confirm("Sei sicuro di voler eliminare questa scheda?")) {
+      showConfirmModal("Sei sicuro di voler eliminare questa scheda?", () => {
         let templates = getWorkoutTemplates();
         delete templates[key];
         localStorage.setItem('workout_templates', JSON.stringify(templates));
         renderTemplateList();
-      }
+      }, 'Elimina');
     }
 
     /* SALVATAGGIO WORKOUT */
@@ -1992,12 +2186,12 @@
         const customDateStr = document.getElementById('workout-date').value;
 
         if (!key) {
-          alert("Seleziona prima una scheda allenamento!");
+          showToast("Seleziona prima una scheda allenamento!");
           return;
         }
 
         if (!customDateStr) {
-          alert("Inserisci una data e un'ora valide!");
+          showToast("Inserisci una data e un'ora valide!");
           return;
         }
 
@@ -2071,7 +2265,7 @@
         
         localStorage.setItem('workout_history', JSON.stringify(history));
 
-        alert(`✅ Allenamento salvato con successo!\nSessioni in memoria: ${history.length}`);
+        showToast(`✅ Allenamento salvato con successo!\nSessioni in memoria: ${history.length}`);
 
         document.getElementById('workout-select').disabled = false;
         document.getElementById('workout-select').value = '';
@@ -2086,7 +2280,7 @@
 
         switchTab('history-tab');
       } catch (err) {
-        alert("❌ ERRORE DURANTE IL SALVATAGGIO:\n" + err.message);
+        showToast("❌ ERRORE DURANTE IL SALVATAGGIO:\n" + err.message);
       }
     }
 
@@ -2320,16 +2514,16 @@
 
       const confirmMessage = `Sei sicuro di voler eliminare questa sessione?\n\n📌 ${target.title}\n📅 ${dateFormatted}`;
 
-      if (confirm(confirmMessage)) {
+      showConfirmModal(confirmMessage, () => {
         history.splice(index, 1);
         localStorage.setItem('workout_history', JSON.stringify(history));
         renderHistory();
-      }
+      }, 'Elimina');
     }
 
     function downloadBlob(blob,filename){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);}
     function exportSharedTemplate(key){const tpl=getWorkoutTemplates()[key];if(!tpl)return;const t=normalizeTemplate(tpl),shared={type:'diario-di-ferro-workout-template',version:1,title:t.title,goal:t.goal,exercises:t.exercises.map(e=>e.isPrep?{name:e.name,isPrep:true,durationMin:e.durationMin||''}:(t.isCardio?{name:e.name,time:e.time||'',dist:e.dist||'',speed:e.speed||''}:{name:e.name,sets:e.setsData.length,targetReps:e.targetReps,restSeconds:e.restSeconds})),notes:t.notes||''};downloadBlob(new Blob([JSON.stringify(shared,null,2)],{type:'application/json'}),`${(t.title||'scheda').replace(/[^a-z0-9àèéìòù _-]/gi,'').trim().replace(/\s+/g,'_')}.json`);}
-    function importSharedTemplate(event){const file=event.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const d=JSON.parse(e.target.result);if(!d||d.type!=='diario-di-ferro-workout-template'||!Array.isArray(d.exercises)||!d.exercises.length||!d.exercises.every(x=>x&&typeof x.name==='string'&&x.name.trim()))throw 0;const goal=d.goal||'ipertrofia',isCardio=d.exercises.some(x=>!x.isPrep&&x.time!==undefined),templates=getWorkoutTemplates(),base=(d.title||'Scheda importata').trim();let title=base,n=2;while(Object.values(templates).some(t=>(t.title||'').toLowerCase()===title.toLowerCase()))title=`${base} (${n++})`;const cfg=getGoalConfig(goal);const exercises=d.exercises.map(e=>e.isPrep?{name:e.name,isPrep:true,durationMin:e.durationMin||''}:(isCardio?{name:e.name,time:e.time||'',dist:e.dist||'',speed:e.speed||''}:{name:e.name,targetReps:e.targetReps||cfg.reps,restSeconds:Number(e.restSeconds)||cfg.rest,setsData:Array.from({length:Math.max(1,Math.min(10,Number(e.sets)||3))},()=>({kg:'',reps:''}))}));templates['IMPORTED_'+Date.now()]={title,goal,isCardio,notes:d.notes||'',exercises,createdAt:new Date().toISOString(),imported:true};localStorage.setItem('workout_templates',JSON.stringify(templates));populateTemplateSelect();renderTemplateList();alert(`Scheda importata come "${title}".`);}catch(err){alert('Errore: il file non è una scheda JSON valida di Diario di Ferro.');}event.target.value='';};reader.readAsText(file);}
+    function importSharedTemplate(event){const file=event.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const d=JSON.parse(e.target.result);if(!d||d.type!=='diario-di-ferro-workout-template'||!Array.isArray(d.exercises)||!d.exercises.length||!d.exercises.every(x=>x&&typeof x.name==='string'&&x.name.trim()))throw 0;const goal=d.goal||'ipertrofia',isCardio=d.exercises.some(x=>!x.isPrep&&x.time!==undefined),templates=getWorkoutTemplates(),base=(d.title||'Scheda importata').trim();let title=base,n=2;while(Object.values(templates).some(t=>(t.title||'').toLowerCase()===title.toLowerCase()))title=`${base} (${n++})`;const cfg=getGoalConfig(goal);const exercises=d.exercises.map(e=>e.isPrep?{name:e.name,isPrep:true,durationMin:e.durationMin||''}:(isCardio?{name:e.name,time:e.time||'',dist:e.dist||'',speed:e.speed||''}:{name:e.name,targetReps:e.targetReps||cfg.reps,restSeconds:Number(e.restSeconds)||cfg.rest,setsData:Array.from({length:Math.max(1,Math.min(10,Number(e.sets)||3))},()=>({kg:'',reps:''}))}));templates['IMPORTED_'+Date.now()]={title,goal,isCardio,notes:d.notes||'',exercises,createdAt:new Date().toISOString(),imported:true};localStorage.setItem('workout_templates',JSON.stringify(templates));populateTemplateSelect();renderTemplateList();showToast(`Scheda importata come "${title}".`);}catch(err){showToast('Errore: il file non è una scheda JSON valida di Diario di Ferro.');}event.target.value='';};reader.readAsText(file);}
     function getExerciseHistoryData(name){const history=JSON.parse(localStorage.getItem('workout_history')||'[]'),rows=[];history.filter(s=>!s.isCardio).forEach(session=>(session.exercises||[]).forEach(ex=>{if((ex.name||'').toLowerCase()!==name.toLowerCase())return;const sets=(Array.isArray(ex.sets)?ex.sets:[]).filter(x=>x.kg!=='-'||x.reps!=='-');const setDetails=sets.map(s=>{const kg=parseFloat(String(s.kg).replace(',','.'));return {kg:Number.isFinite(kg)?kg:null, reps:s.reps};});const weights=setDetails.map(s=>s.kg).filter(Number.isFinite);rows.push({date:session.date,load:weights.length?Math.max(...weights):null,sets:sets.length,reps:sets.map(x=>x.reps).join(' / '),setDetails});}));return rows.sort((a,b)=>new Date(a.date)-new Date(b.date));}
     function openExerciseHistory(name){const modal=document.getElementById('exercise-history-modal'),rows=getExerciseHistoryData(name);document.getElementById('exercise-history-title').textContent=`Storico: ${name}`;if(!rows.length){document.getElementById('exercise-history-summary').textContent='Nessuna prestazione registrata.';document.getElementById('exercise-history-table').innerHTML='';drawExerciseHistoryChart([]);modal.classList.add('active');return;}const last=rows[rows.length-1];document.getElementById('exercise-history-summary').textContent=`Ultima seduta: ${last.load!==null?last.load+' kg':'corpo libero'} · ${last.sets} serie · ${last.reps||'-'}`;document.getElementById('exercise-history-table').innerHTML='<table class="history-table"><thead><tr><th>Data</th><th>Carico</th><th>Serie</th><th>Ripetizioni</th></tr></thead><tbody>'+rows.slice().reverse().map(r=>`<tr><td>${new Date(r.date).toLocaleDateString('it-IT')}</td><td>${r.load!==null?r.load+' kg':'—'}</td><td>${r.sets}</td><td>${escapeHtml(r.reps||'—')}</td></tr>`).join('')+'</tbody></table>';drawExerciseHistoryChart(rows);modal.classList.add('active');}
     function closeExerciseHistory(){document.getElementById('exercise-history-modal').classList.remove('active');}
@@ -2416,7 +2610,7 @@
           // di dare un falso "successo" senza importare nulla.
           if (imported && typeof imported === 'object' && !Array.isArray(imported)
               && imported.type && imported.type !== 'diario-di-ferro-backup') {
-            alert('Errore: questo file non è un backup di Diario di Ferro (sembra un altro tipo di file, ad es. una scheda condivisa). Per importare una scheda usa il pulsante "Importa scheda" nella sezione Schede.');
+            showToast('Errore: questo file non è un backup di Diario di Ferro (sembra un altro tipo di file, ad es. una scheda condivisa). Per importare una scheda usa il pulsante "Importa scheda" nella sezione Schede.');
             event.target.value = '';
             return;
           }
@@ -2451,16 +2645,16 @@
           }
 
           if (!matched) {
-            alert('Errore: il file selezionato non contiene dati di backup riconoscibili (nessuno storico, esercizio personalizzato o scheda trovati).');
+            showToast('Errore: il file selezionato non contiene dati di backup riconoscibili (nessuno storico, esercizio personalizzato o scheda trovati).');
             event.target.value = '';
             return;
           }
 
-          alert('Importazione completata con successo!');
+          showToast('Importazione completata con successo!');
           populateTemplateSelect();
           renderHistory();
         } catch (err) {
-          alert('Errore nella lettura del file JSON.');
+          showToast('Errore nella lettura del file JSON.');
         }
       };
       reader.readAsText(file);
@@ -2502,7 +2696,7 @@
 
       const totalKB = ((rawHistory.length + rawCustom.length + rawTemplates.length) / 1024).toFixed(2);
 
-      alert(`🔍 DIAGNOSTICA MEMORIA:\n\n- Dimensione dati: ${totalKB} KB\n- Sessione salvate: ${parsedH.length}\n- Esercizi personalizzati: ${parsedC.length}\n- Schede configurate: ${Object.keys(parsedT).length}`);
+      showToast(`🔍 DIAGNOSTICA MEMORIA:\n\n- Dimensione dati: ${totalKB} KB\n- Sessione salvate: ${parsedH.length}\n- Esercizi personalizzati: ${parsedC.length}\n- Schede configurate: ${Object.keys(parsedT).length}`, 6000);
     }
 
     window.onload = function() {
