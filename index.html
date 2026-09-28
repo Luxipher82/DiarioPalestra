@@ -1448,20 +1448,32 @@
       }
     }
 
+    function persistUserProfile(profile) {
+      try {
+        localStorage.setItem('user_profile', JSON.stringify(profile));
+        const check = localStorage.getItem('user_profile');
+        const parsed = check ? JSON.parse(check) : null;
+        return !!parsed && parsed.name === profile.name && parsed.height === profile.height;
+      } catch (e) {
+        return false;
+      }
+    }
+
     function saveUserProfileBasic() {
       const profile = getUserProfile();
       profile.name = document.getElementById('profile-name').value.trim();
       profile.height = document.getElementById('profile-height').value;
       profile.lifestyle = document.getElementById('profile-lifestyle').value;
       profile.weeklyWorkouts = document.getElementById('profile-weekly-workouts').value;
-      try {
-        localStorage.setItem('user_profile', JSON.stringify(profile));
-      } catch (e) {
-        showToast('Errore nel salvataggio del profilo: ' + e.message);
-        return;
+
+      const persisted = persistUserProfile(profile);
+      renderProfileTab(profile);
+
+      if (persisted) {
+        showToast(profile.name ? `Profilo salvato, ${profile.name}!` : 'Profilo salvato.');
+      } else {
+        showToast('⚠️ Dati mostrati, ma il salvataggio permanente su questo dispositivo/browser non è riuscito. Potrebbero non essere ancora disponibili alla riapertura dell\'app.', 5000);
       }
-      renderProfileTab();
-      showToast(profile.name ? `Profilo salvato, ${profile.name}!` : 'Profilo salvato.');
     }
 
     function addWeightEntry() {
@@ -1474,15 +1486,16 @@
       if (existingIdx >= 0) profile.weightHistory[existingIdx].weight = val;
       else profile.weightHistory.push({ date: new Date().toISOString(), weight: val });
       profile.weightHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
-      try {
-        localStorage.setItem('user_profile', JSON.stringify(profile));
-      } catch (e) {
-        showToast('Errore nel salvataggio del peso: ' + e.message);
-        return;
-      }
+
+      const persisted = persistUserProfile(profile);
       input.value = '';
-      renderProfileTab();
-      showToast(profile.name ? `Pesata registrata, ${profile.name}!` : 'Pesata registrata.');
+      renderProfileTab(profile);
+
+      if (persisted) {
+        showToast(profile.name ? `Pesata registrata, ${profile.name}!` : 'Pesata registrata.');
+      } else {
+        showToast('⚠️ Peso mostrato, ma il salvataggio permanente su questo dispositivo/browser non è riuscito.', 5000);
+      }
     }
 
     function resetUserProfile() {
@@ -1517,8 +1530,8 @@
       return { bmi, label };
     }
 
-    function renderProfileTab() {
-      const profile = getUserProfile();
+    function renderProfileTab(profileOverride) {
+      const profile = profileOverride || getUserProfile();
       document.getElementById('profile-name').value = profile.name;
       document.getElementById('profile-height').value = profile.height;
       document.getElementById('profile-lifestyle').value = profile.lifestyle;
@@ -2699,6 +2712,23 @@
       showToast(`🔍 DIAGNOSTICA MEMORIA:\n\n- Dimensione dati: ${totalKB} KB\n- Sessione salvate: ${parsedH.length}\n- Esercizi personalizzati: ${parsedC.length}\n- Schede configurate: ${Object.keys(parsedT).length}`, 6000);
     }
 
+    function showWelcomeMessage() {
+      const profile = getUserProfile();
+      const name = profile.name;
+      const pool = name ? [
+        `Forza ${name}, registra il tuo allenamento!`,
+        `Bentornato ${name}! Pronto per allenarti?`,
+        `${name}, oggi è un buon giorno per allenarsi.`,
+        `Dai ${name}, un altro passo verso i tuoi obiettivi!`
+      ] : [
+        'Forza, registra il tuo allenamento!',
+        'Bentornato! Pronto per allenarti?',
+        'Oggi è un buon giorno per allenarsi.'
+      ];
+      const text = pool[Math.floor(Math.random() * pool.length)];
+      showToast(`💪 ${text}`, 3500);
+    }
+
     window.onload = function() {
       setDefaultDateTime();
       populateTemplateSelect();
@@ -2706,6 +2736,7 @@
       checkBackupReminder();
       renderProfileTab();
       updateHeaderVisibilityForTab('profile-tab');
+      showWelcomeMessage();
     };
   </script>
 </body>
