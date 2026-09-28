@@ -446,6 +446,16 @@
     .history-table th { color:var(--text-muted); font-weight:600; }
     .chart-wrap { width:100%; overflow-x:auto; margin-top:10px; }
     .exercise-history-chart { width:100%; min-width:420px; height:220px; background:#141414; border:1px solid var(--border); border-radius:6px; color:var(--accent); }
+    .template-weekly-plan-status {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #181818;
+    }
+    .template-weekly-plan-status.ok { border-color: var(--success); }
+    .template-weekly-plan-status.under, .template-weekly-plan-status.over { border-color: var(--accent); }
+    .template-weekly-plan-status.missing { border-color: var(--info); }
+
     .small-note { font-size:0.78rem; color:var(--text-muted); line-height:1.35; }
 
     /* History & Lists */
@@ -739,6 +749,7 @@
 
         <label for="profile-height">Altezza (cm)</label>
         <input type="number" id="profile-height" min="0" step="1" placeholder="Es. 175">
+        <div id="profile-identity-note" class="small-note" style="display:none; margin-top:6px; margin-bottom:10px;">🔒 Nome e altezza, una volta salvati, restano fissi. Per correggerli è necessario usare «Reset Profilo» e ricreare il profilo.</div>
 
         <label for="profile-lifestyle">Stile di vita</label>
         <select id="profile-lifestyle">
@@ -869,6 +880,7 @@
       </div>
       <input type="file" id="template-import-file" accept=".json,application/json" style="display:none;" onchange="importSharedTemplate(event)">
       <div class="small-note" style="margin-bottom:12px;">Le schede condivise contengono solo programmazione, non storico o dati personali.</div>
+      <div id="template-weekly-plan-status" class="small-note template-weekly-plan-status" style="margin-bottom:12px;"></div>
       <div id="templates-container"></div>
     </div>
 
@@ -1436,35 +1448,68 @@
       try {
         const raw = localStorage.getItem('user_profile');
         const p = raw ? JSON.parse(raw) : {};
+        const name = p.name || '';
+        const height = p.height || '';
         return {
-          name: p.name || '',
-          height: p.height || '',
+          name,
+          height,
           lifestyle: p.lifestyle || '',
           weeklyWorkouts: p.weeklyWorkouts || '',
-          weightHistory: Array.isArray(p.weightHistory) ? p.weightHistory : []
+          weightHistory: Array.isArray(p.weightHistory) ? p.weightHistory : [],
+          // Compatibilità con i profili già salvati nelle versioni precedenti.
+          identityLocked: p.identityLocked !== false && !!name && !!height
         };
       } catch (e) {
-        return { name: '', height: '', lifestyle: '', weeklyWorkouts: '', weightHistory: [] };
+        return { name: '', height: '', lifestyle: '', weeklyWorkouts: '', weightHistory: [], identityLocked: false };
       }
     }
 
     function persistUserProfile(profile) {
       try {
-        localStorage.setItem('user_profile', JSON.stringify(profile));
+        const data = {
+          name: profile.name || '',
+          height: profile.height || '',
+          lifestyle: profile.lifestyle || '',
+          weeklyWorkouts: profile.weeklyWorkouts || '',
+          weightHistory: Array.isArray(profile.weightHistory) ? profile.weightHistory : [],
+          identityLocked: !!profile.identityLocked
+        };
+        localStorage.setItem('user_profile', JSON.stringify(data));
         const check = localStorage.getItem('user_profile');
         const parsed = check ? JSON.parse(check) : null;
-        return !!parsed && parsed.name === profile.name && parsed.height === profile.height;
+        return !!parsed
+          && parsed.name === data.name
+          && parsed.height === data.height
+          && parsed.lifestyle === data.lifestyle
+          && parsed.weeklyWorkouts === data.weeklyWorkouts
+          && JSON.stringify(parsed.weightHistory || []) === JSON.stringify(data.weightHistory || []);
       } catch (e) {
         return false;
       }
     }
 
+    function updateProfileIdentityLock(profile) {
+      const nameEl = document.getElementById('profile-name');
+      const heightEl = document.getElementById('profile-height');
+      const noteEl = document.getElementById('profile-identity-note');
+      const locked = !!profile.identityLocked;
+      if (nameEl) { nameEl.disabled = locked || !!profile.name; nameEl.title = (locked || profile.name) ? 'Dato personale già salvato. Per cambiarlo devi azzerare il profilo.' : ''; }
+      if (heightEl) { heightEl.disabled = locked || !!profile.height; heightEl.title = (locked || profile.height) ? 'Dato personale già salvato. Per cambiarlo devi azzerare il profilo.' : ''; }
+      if (noteEl) noteEl.style.display = (locked || profile.name || profile.height) ? 'block' : 'none';
+    }
+
     function saveUserProfileBasic() {
       const profile = getUserProfile();
-      profile.name = document.getElementById('profile-name').value.trim();
-      profile.height = document.getElementById('profile-height').value;
+      const nameEl = document.getElementById('profile-name');
+      const heightEl = document.getElementById('profile-height');
+
+      // Nome e altezza diventano definitivi dopo il primo salvataggio.
+      // Se erano già presenti, ignoriamo eventuali modifiche provenienti dal DOM.
+      if (!profile.name) profile.name = nameEl.value.trim();
+      if (!profile.height) profile.height = heightEl.value;
       profile.lifestyle = document.getElementById('profile-lifestyle').value;
       profile.weeklyWorkouts = document.getElementById('profile-weekly-workouts').value;
+      if (profile.name && profile.height) profile.identityLocked = true;
 
       const persisted = persistUserProfile(profile);
       renderProfileTab(profile);
@@ -1472,7 +1517,7 @@
       if (persisted) {
         showToast(profile.name ? `Profilo salvato, ${profile.name}!` : 'Profilo salvato.');
       } else {
-        showToast('⚠️ Dati mostrati, ma il salvataggio permanente su questo dispositivo/browser non è riuscito. Potrebbero non essere ancora disponibili alla riapertura dell\'app.', 5000);
+        showToast('⚠️ Il salvataggio permanente del profilo non è riuscito. Riprova.', 5000);
       }
     }
 
@@ -1536,6 +1581,7 @@
       document.getElementById('profile-height').value = profile.height;
       document.getElementById('profile-lifestyle').value = profile.lifestyle;
       document.getElementById('profile-weekly-workouts').value = profile.weeklyWorkouts;
+      updateProfileIdentityLock(profile);
 
       const lastEntry = profile.weightHistory.length ? profile.weightHistory[profile.weightHistory.length - 1] : null;
       const bmiWrap = document.getElementById('profile-bmi-wrap');
@@ -2067,9 +2113,63 @@
     }
 
     /* GESTORE SCHEDE PERSONALI (CON RIORDINAMENTO E SERIE CONFIGURABILI) */
+    function isCardioTemplate(template, key = '') {
+      // Una scheda è considerata cardio se è esplicitamente marcata come tale.
+      // Il controllo sul nome/chiave CARDIO mantiene compatibili anche eventuali
+      // schede cardio salvate con versioni precedenti dell'app.
+      return !!(template?.isCardio) || String(key).toUpperCase() === 'CARDIO';
+    }
+
+    function getTemplateCount() {
+      const templates = getWorkoutTemplates();
+      // Il numero del profilo rappresenta gli allenamenti con i pesi.
+      // Le schede cardio sono extra e quindi non entrano nel conteggio.
+      return Object.entries(templates).filter(([key, template]) => !isCardioTemplate(template, key)).length;
+    }
+
+    function getWeeklyWorkoutPlanStatus() {
+      const profile = getUserProfile();
+      const planned = parseInt(profile.weeklyWorkouts, 10);
+      const current = getTemplateCount();
+      if (!Number.isFinite(planned) || planned <= 0) {
+        return { current, planned: null, type: 'missing', message: 'Nel profilo non è ancora indicato il numero di allenamenti con i pesi settimanali.' };
+      }
+      if (current === planned) {
+        return { current, planned, type: 'ok', message: `Il profilo prevede ${planned} allenamenti con i pesi e sono presenti ${current} schede pesi: il numero coincide. Le eventuali schede cardio sono aggiuntive.` };
+      }
+      const diff = planned - current;
+      if (diff > 0) {
+        return { current, planned, type: 'under', message: `Il profilo prevede ${planned} allenamenti con i pesi, ma sono presenti ${current} schede pesi: ne mancano ${diff}. Le schede cardio sono extra e non vengono conteggiate.` };
+      }
+      return { current, planned, type: 'over', message: `Il profilo prevede ${planned} allenamenti con i pesi, ma sono presenti ${current} schede pesi: se vuoi svolgere ${current} allenamenti con i pesi, aggiorna il profilo. Le schede cardio sono extra.` };
+    }
+
+    function updateWeeklyWorkoutPlanNotice() {
+      const el = document.getElementById('template-weekly-plan-status');
+      if (!el) return;
+      const status = getWeeklyWorkoutPlanStatus();
+      el.className = `small-note template-weekly-plan-status ${status.type}`;
+      let action = '';
+      if (status.type === 'under') {
+        action = `<button class="btn btn-sm" style="margin-top:8px;" onclick="openTemplateEditor(null)">Crea la scheda mancante</button>`;
+      } else if (status.type === 'over') {
+        action = `<button class="btn btn-sm btn-secondary" style="margin-top:8px;" onclick="switchToProfileFromTemplates()">Aggiorna il profilo</button>`;
+      } else if (status.type === 'missing') {
+        action = `<button class="btn btn-sm btn-secondary" style="margin-top:8px;" onclick="switchToProfileFromTemplates()">Imposta nel profilo</button>`;
+      }
+      el.innerHTML = `🏋️ <strong>Programmazione settimanale</strong><br>${escapeHtml(status.message)}${action}`;
+    }
+
+    function switchToProfileFromTemplates() {
+      closeTemplateManagerModal();
+      switchTab('profile-tab');
+      setTimeout(() => document.getElementById('profile-weekly-workouts')?.focus(), 100);
+    }
+
     function openTemplateManagerModal() {
       document.getElementById('template-manager-modal').classList.add('active');
       renderTemplateList();
+      updateWeeklyWorkoutPlanNotice();
     }
 
     function closeTemplateManagerModal() {
@@ -2082,6 +2182,7 @@
       const container = document.getElementById('templates-container');
       const templates = getWorkoutTemplates();
       container.innerHTML = '';
+      updateWeeklyWorkoutPlanNotice();
 
       for (const [key, tpl] of Object.entries(templates)) {
         const div = document.createElement('div');
@@ -2126,11 +2227,20 @@
         document.getElementById('editor-template-notes').value = '';
         tempEditorExercises = [];
         const profile = getUserProfile(), reminderEl = document.getElementById('editor-weekly-reminder');
-        if (profile.weeklyWorkouts) {
-          reminderEl.textContent = `Hai scelto ${profile.weeklyWorkouts} allenamenti settimanali, ricorda di impostare ${profile.weeklyWorkouts} schede`;
+        const status = getWeeklyWorkoutPlanStatus();
+        if (status.type === 'under') {
+          const nextNumber = status.current + 1;
+          reminderEl.textContent = `Il profilo prevede ${status.planned} allenamenti settimanali. Hai già ${status.current} schede: questa può essere la scheda ${nextNumber} di ${status.planned}.`;
+          reminderEl.style.display = 'block';
+        } else if (status.type === 'ok') {
+          reminderEl.textContent = `Il profilo prevede ${status.planned} allenamenti e hai già ${status.current} schede: il numero coincide.`;
+          reminderEl.style.display = 'block';
+        } else if (status.type === 'over') {
+          reminderEl.textContent = `Attenzione: nel profilo sono indicati ${status.planned} allenamenti, ma ci sono già ${status.current} schede. Se sono tutte previste, aggiorna il numero nel profilo.`;
           reminderEl.style.display = 'block';
         } else {
-          reminderEl.style.display = 'none';
+          reminderEl.textContent = 'Imposta prima nel Profilo il numero di allenamenti settimanali per organizzare il numero di schede.';
+          reminderEl.style.display = 'block';
         }
       }
 
