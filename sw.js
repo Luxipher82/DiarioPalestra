@@ -1,4 +1,4 @@
-const CACHE_NAME = 'diario-ferro-v10';
+const CACHE_NAME = 'diario-ferro-v11';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
