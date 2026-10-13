@@ -926,7 +926,7 @@
 
   <div id="exercise-history-modal" class="fullscreen-modal">
     <div class="modal-header"><h2 id="exercise-history-title">Storico esercizio</h2><button class="modal-close-btn" onclick="closeExerciseHistory()">Chiudi ✖</button></div>
-    <div class="card"><div id="exercise-history-summary" class="small-note"></div><div class="history-table-wrap" id="exercise-history-table"></div><div class="chart-wrap"><svg id="exercise-history-chart" class="exercise-history-chart" viewBox="0 0 700 220" preserveAspectRatio="none"></svg><div id="exercise-history-legend" class="small-note" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:10px;"></div><div class="small-note" style="margin-top:4px; opacity:0.7;">Il numero accanto a ogni punto indica le ripetizioni fatte in quella serie.</div></div></div>
+    <div class="card"><div id="exercise-history-summary" class="small-note"></div><div class="history-table-wrap" id="exercise-history-table"></div><div class="chart-wrap"><svg id="exercise-history-chart" class="exercise-history-chart" viewBox="0 0 700 220" preserveAspectRatio="none"></svg><div id="exercise-history-legend" class="small-note" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:10px;"></div><div class="small-note" style="margin-top:4px; opacity:0.7;">Lo storico mostra carichi e prestazioni registrate per serie.</div></div></div>
   </div>
 
   <script>
@@ -945,6 +945,8 @@
       { id: "ex_spinte_manubri_piana", name: "Spinte con manubri su panca piana", category: "Petto", isCardio: false, allowWeight: true, desc: "Ottimo controllo e tensione costante sui pettorali." },
       { id: "ex_hex_press", name: "Squeeze/Hex press con manubri", category: "Petto", isCardio: false, allowWeight: true, desc: "Premi costantemente i due manubri l'uno contro l'altro durante tutto il movimento." },
       { id: "ex_croci_manubri", name: "Croci con manubri", category: "Petto", isCardio: false, allowWeight: true, desc: "Aperture controllate mantenendo i gomiti leggermente flessi." },
+      { id: "ex_croci_manubri_inclinata", name: "Croci con manubri su panca inclinata", category: "Petto", isCardio: false, allowWeight: true, desc: "Sdraiati su panca inclinata, gomiti leggermente flessi; apri le braccia con controllo senza scendere oltre il comfort delle spalle." },
+      { id: "ex_croci_manubri_piana", name: "Croci con manubri su panca piana", category: "Petto", isCardio: false, allowWeight: true, desc: "Su panca piana, apri le braccia con gomiti morbidi e richiudi sopra il petto senza urtare i manubri." },
       { id: "ex_croci_cavi", name: "Croci ai cavi", category: "Petto", isCardio: false, allowWeight: true, desc: "Tensione continua sia nella fase eccentrica che concentrica." },
       { id: "ex_chest_press_cavo", name: "Chest press al cavo", category: "Petto", isCardio: false, allowWeight: true, desc: "Spinta controllata ai cavi adattando l'esecuzione." },
       { id: "ex_pushup", name: "Piegamenti / Push-up", category: "Petto", isCardio: false, allowWeight: true, desc: "Corpo in plank, gomiti a 45 gradi rispetto al busto." },
@@ -956,16 +958,20 @@
       { id: "ex_military_press_bil", name: "Military press con bilanciere", category: "Spalle", isCardio: false, allowWeight: true, desc: "Spinta verticale in piedi o da seduto. Core e glutei contratti." },
       { id: "ex_military_press_man", name: "Military press con manubri", category: "Spalle", isCardio: false, allowWeight: true, desc: "Spinta verticale con manubri." },
       { id: "ex_shoulder_press_man", name: "Shoulder press con manubri", category: "Spalle", isCardio: false, allowWeight: true, desc: "Variante seduto con schienale inclinato." },
+      { id: "ex_shoulder_press_neutra", name: "Shoulder press con manubri a presa neutra", category: "Spalle", isCardio: false, allowWeight: true, desc: "Spingi i manubri sopra la testa con i palmi rivolti uno verso l'altro, mantenendo polsi allineati e schiena appoggiata." },
       { id: "ex_arnold_press", name: "Arnold press", category: "Spalle", isCardio: false, allowWeight: true, desc: "Partenza con palmi rivolti al busto, rotazione durante la spinta." },
       { id: "ex_alzate_laterali", name: "Alzate laterali", category: "Spalle", isCardio: false, allowWeight: true, desc: "Solleva i manubri verso l'esterno fino a 90 gradi." },
+      { id: "ex_alzate_laterali_seduto", name: "Alzate laterali da seduto", category: "Spalle", isCardio: false, allowWeight: true, desc: "Da seduto, solleva i manubri lateralmente senza slanciare il busto; usa un carico controllabile." },
       { id: "ex_alzate_laterali_cavo", name: "Alzate laterali al cavo", category: "Spalle", isCardio: false, allowWeight: true, desc: "Tensione costante lungo tutto l'arco di movimento." },
       { id: "ex_face_pull", name: "Face pull", category: "Spalle", isCardio: false, allowWeight: true, desc: "Cavo alto con fune, tira verso la fronte." },
       { id: "ex_alzate_posteriori_man", name: "Alzate posteriori con manubri", category: "Spalle", isCardio: false, allowWeight: true, desc: "Busto flesso in avanti per il deltoide posteriore." },
+      { id: "ex_alzate_posteriori_panca_inclinata", name: "Alzate posteriori con manubri su panca inclinata", category: "Spalle", isCardio: false, allowWeight: true, desc: "A pancia in giù sulla panca inclinata, apri le braccia lateralmente con gomiti leggermente flessi per allenare il deltoide posteriore." },
       { id: "ex_reverse_fly_cavo", name: "Reverse fly al cavo", category: "Spalle", isCardio: false, allowWeight: true, desc: "Cavi incrociati ad altezza petto." },
       { id: "ex_front_raise", name: "Front raise / Alzate frontali", category: "Spalle", isCardio: false, allowWeight: true, desc: "Focus sul deltoide anteriore." },
 
       // DORSO
       { id: "ex_trazioni_prona", name: "Trazioni alla sbarra (presa prona)", category: "Dorso", isCardio: false, allowWeight: true, desc: "Palmi rivolti in avanti. Tira portando il petto alla sbarra." },
+      { id: "ex_trazioni_larga", name: "Trazioni alla sbarra presa larga", category: "Dorso", isCardio: false, allowWeight: true, desc: "Presa prona più larga delle spalle; porta il petto verso la sbarra senza slanci e senza forzare l'ampiezza della presa." },
       { id: "ex_trazioni_supina", name: "Trazioni alla sbarra (presa supina)", category: "Dorso", isCardio: false, allowWeight: true, desc: "Palmi rivolti verso di te. Maggior reclutamento del bicipite." },
       { id: "ex_trazioni_neutra", name: "Trazioni alla sbarra (presa neutra)", category: "Dorso", isCardio: false, allowWeight: true, desc: "Presa confortevole per le spalle." },
       { id: "ex_lat_machine_larga", name: "Lat machine presa larga", category: "Dorso", isCardio: false, allowWeight: true, desc: "Tira la sbarra al petto adducendo le scapole." },
@@ -988,6 +994,7 @@
       { id: "ex_bayesian_curl", name: "Bayesian curl al cavo", category: "Bicipiti", isCardio: false, allowWeight: true, desc: "In allungamento con tensione costante." },
       { id: "ex_curl_concentrato", name: "Curl concentrato", category: "Bicipiti", isCardio: false, allowWeight: true, desc: "Isolamento totale." },
       { id: "ex_curl_cavo_basso", name: "Curl al cavo basso", category: "Bicipiti", isCardio: false, allowWeight: true, desc: "Tensione uniforme." },
+      { id: "ex_curl_cavo_barra", name: "Curl al cavo con barra dritta", category: "Bicipiti", isCardio: false, allowWeight: true, desc: "Al cavo basso, fletti i gomiti mantenendoli vicino ai fianchi e controlla la discesa." },
 
       // TRICIPITI
       { id: "ex_pushdown_cavo", name: "Pushdown al cavo", category: "Tricipiti", isCardio: false, allowWeight: true, desc: "Gomiti fermi ai fianchi." },
@@ -1009,6 +1016,7 @@
       { id: "ex_step_up", name: "Step-up su rialzo", category: "Gambe", isCardio: false, allowWeight: true, desc: "Salita su box o panca." },
       { id: "ex_stacco_rumeno_bil", name: "Stacco rumeno con bilanciere", category: "Gambe", isCardio: false, allowWeight: true, desc: "Focus su catena posteriore." },
       { id: "ex_stacco_rumeno_man", name: "Stacco rumeno con manubri", category: "Gambe", isCardio: false, allowWeight: true, desc: "Controllo del bacino." },
+      { id: "ex_stacco_rumeno_unilaterale", name: "Stacco rumeno su una gamba con manubrio", category: "Gambe", isCardio: false, allowWeight: true, desc: "Con un manubrio, porta il bacino indietro e inclina il busto mantenendo la schiena neutra; usa un appoggio se serve equilibrio." },
       { id: "ex_hip_thrust_bil", name: "Hip thrust con bilanciere", category: "Gambe", isCardio: false, allowWeight: true, desc: "Isolamento dei glutei." },
       { id: "ex_glute_bridge", name: "Glute bridge", category: "Gambe", isCardio: false, allowWeight: true, desc: "Spinta d'anca a terra." },
       { id: "ex_single_leg_bridge", name: "Single-leg glute bridge", category: "Gambe", isCardio: false, allowWeight: true, desc: "Unilaterale a terra." },
@@ -1017,13 +1025,16 @@
       { id: "ex_leg_curl_cavo", name: "Leg curl al cavo", category: "Gambe", isCardio: false, allowWeight: false, desc: "Per i femorali." },
       { id: "ex_calf_raise_in_piedi", name: "Calf raise in piedi", category: "Gambe", isCardio: false, allowWeight: true, desc: "Per i polpacci." },
       { id: "ex_calf_raise_rialzo", name: "Calf raise su rialzo", category: "Gambe", isCardio: false, allowWeight: true, desc: "Massimo allungamento." },
+      { id: "ex_calf_raise_seduto_man", name: "Calf raise da seduto con manubri", category: "Gambe", isCardio: false, allowWeight: true, desc: "Seduto sulla panca, appoggia i manubri sulle cosce appena sopra le ginocchia e solleva i talloni controllando discesa e allungamento." },
 
       // CORE (INCLUSO RUSSIAN TWIST)
       { id: "ex_russian_twist", name: "Russian twist", category: "Core", isCardio: false, allowWeight: true, desc: "Seduto con busto inclinato indietro, ruota il busto a destra e sinistra (opzionale con sovraccarico/disco)." },
-      { id: "ex_plank", name: "Plank isometrico", category: "Core", isCardio: false, allowWeight: true, desc: "Tenuta isometrica del corpo in linea." },
-      { id: "ex_side_plank", name: "Side plank", category: "Core", isCardio: false, allowWeight: true, desc: "Tenuta laterale per gli obliqui." },
+      { id: "ex_plank", name: "Plank isometrico", category: "Core", isCardio: false, allowWeight: true, isTimed: true, desc: "Tenuta isometrica del corpo in linea; registra la durata in secondi." },
+      { id: "ex_side_plank", name: "Side plank", category: "Core", isCardio: false, allowWeight: true, isTimed: true, desc: "Tenuta laterale con corpo allineato; registra la durata in secondi per lato." },
+      { id: "ex_hollow_body_hold", name: "Hollow body hold", category: "Core", isCardio: false, allowWeight: false, isTimed: true, desc: "Da supino, mantieni addome contratto e zona lombare aderente al tappetino; registra la tenuta in secondi." },
       { id: "ex_crunch", name: "Crunch addominale", category: "Core", isCardio: false, allowWeight: true, desc: "Flessione della colonna." },
       { id: "ex_reverse_crunch", name: "Reverse crunch", category: "Core", isCardio: false, allowWeight: false, desc: "Sollevamento del bacino." },
+      { id: "ex_crunch_inverso_alternato", name: "Crunch inverso a gambe alternate", category: "Core", isCardio: false, allowWeight: false, desc: "Da supino, porta alternativamente un ginocchio verso il busto e solleva leggermente il bacino con controllo, evitando slanci e inarcamento lombare." },
       { id: "ex_leg_raise", name: "Leg raise a terra", category: "Core", isCardio: false, allowWeight: true, desc: "Sollevamento gambe." },
       { id: "ex_knee_raise_sbarra", name: "Knee raise alla sbarra", category: "Core", isCardio: false, allowWeight: true, desc: "In sospensione." },
       { id: "ex_cable_crunch", name: "Crunch alla puleggia / cavo", category: "Core", isCardio: false, allowWeight: false, desc: "In ginocchio al cavo alto." },
@@ -1361,6 +1372,12 @@
       renderArchiveList();
     }
 
+    function isTimedExercise(exOrName) {
+      if (exOrName && typeof exOrName === 'object' && exOrName.isTimed) return true;
+      const name = typeof exOrName === 'string' ? exOrName : (exOrName && exOrName.name) || '';
+      return /\b(plank|hollow body hold)\b/i.test(name);
+    }
+
     const GOAL_CONFIG = {
       definizione:{label:'Dimagrimento / Definizione',reps:'10-15',rest:60,hint:'Range indicativo: 10–15 ripetizioni. Il carico deve permettere una buona tecnica.'},
       ipertrofia:{label:'Ipertrofia / Massa muscolare',reps:'6-12',rest:90,hint:'Range indicativo: 6–12 ripetizioni. Parti con un carico che consenta di lavorare nel range con tecnica controllata.'},
@@ -1373,7 +1390,7 @@
     function getGoalConfig(goal){ return GOAL_CONFIG[goal] || GOAL_CONFIG.ipertrofia; }
     function normalizeTemplate(template){
       const t=JSON.parse(JSON.stringify(template||{})); t.goal=t.goal||(t.isCardio?'resistenza':'ipertrofia'); t.notes=t.notes||''; t.exercises=Array.isArray(t.exercises)?t.exercises:[];
-      const cfg=getGoalConfig(t.goal); t.exercises=t.exercises.map(ex=>{const e={...ex}; if(!t.isCardio&&!e.isPrep){e.setsData=Array.isArray(e.setsData)&&e.setsData.length?e.setsData:[{kg:'',reps:''},{kg:'',reps:''},{kg:'',reps:''}]; e.targetReps=e.targetReps||cfg.reps; e.restSeconds=Number(e.restSeconds)>0?Number(e.restSeconds):cfg.rest;} return e;}); return t;
+      const cfg=getGoalConfig(t.goal); t.exercises=t.exercises.map(ex=>{const e={...ex}; if(!t.isCardio&&!e.isPrep){e.isTimed=isTimedExercise(e);e.setsData=Array.isArray(e.setsData)&&e.setsData.length?e.setsData:[{kg:'',reps:'',time:''},{kg:'',reps:'',time:''},{kg:'',reps:'',time:''}]; if(e.isTimed){e.targetTime=e.targetTime||'20-40';e.setsData=e.setsData.map(s=>({...s,time:s.time||'',reps:s.reps||''}));}else{e.targetReps=e.targetReps||cfg.reps;} e.restSeconds=Number(e.restSeconds)>0?Number(e.restSeconds):cfg.rest;} return e;}); return t;
     }
     function getWorkoutTemplates(){
       let saved=null; try{saved=JSON.parse(localStorage.getItem('workout_templates'));}catch(e){}
@@ -1707,7 +1724,11 @@
           if (Array.isArray(ex.setsData)) {
             ex.setsData.forEach((s, sIdx) => {
               s.kg = document.getElementById(`ex-${exIdx}-set-${sIdx + 1}-kg`)?.value || '';
-              s.reps = document.getElementById(`ex-${exIdx}-set-${sIdx + 1}-reps`)?.value || '';
+              if (isTimedExercise(ex)) {
+                s.time = document.getElementById(`ex-${exIdx}-set-${sIdx + 1}-time`)?.value || '';
+              } else {
+                s.reps = document.getElementById(`ex-${exIdx}-set-${sIdx + 1}-reps`)?.value || '';
+              }
             });
           }
         }
@@ -1746,7 +1767,7 @@
             } else if (session.isCardio) {
               return `Ultima volta: ${ex.time || '-'} | ${ex.dist || '-'}`;
             } else if (Array.isArray(ex.sets) && ex.sets.length > 0) {
-              const setsStr = ex.sets.map(s => `${s.kg || '-'}kg x ${s.reps || '-'}`).join(', ');
+              const setsStr = ex.sets.map(s => isTimedExercise(ex) ? `${s.time || '-'} sec` : `${s.kg || '-'}kg x ${s.reps || '-'}`).join(', ');
               return `Ultima volta: ${setsStr}`;
             }
           }
@@ -1790,9 +1811,10 @@
         // Recupera suggerimento storico
         const lastPerfText = getLastPerformanceForExercise(ex.name);
         const tplCfg = getGoalConfig(activeWorkoutData.goal);
-        const targetHtml = !activeWorkoutData.isCardio ? `<div class="small-note" style="margin:4px 0 8px;">🎯 Target: ${escapeHtml(ex.targetReps || tplCfg.reps)} ripetizioni · Recupero: ${Number(ex.restSeconds || tplCfg.rest)} s</div>` : '';
+        const timedExercise = isTimedExercise(ex);
+        const targetHtml = !activeWorkoutData.isCardio ? `<div class="small-note" style="margin:4px 0 8px;">🎯 Target: ${escapeHtml(timedExercise ? (ex.targetTime || '20-40') + ' secondi' : (ex.targetReps || tplCfg.reps) + ' ripetizioni')} · Recupero: ${Number(ex.restSeconds || tplCfg.rest)} s</div>` : '';
         const hintHtml = lastPerfText ? `<div class="exercise-hint">💡 ${escapeHtml(lastPerfText)}</div>` : '';
-        const adviceText = !activeWorkoutData.isCardio ? getProgressionAdvice(ex.name, ex.targetReps || tplCfg.reps) : null;
+        const adviceText = !activeWorkoutData.isCardio && !timedExercise ? getProgressionAdvice(ex.name, ex.targetReps || tplCfg.reps) : null;
         const adviceHtml = adviceText ? `<div class="small-note" style="margin-bottom:8px;">📈 ${escapeHtml(adviceText)}</div>` : '';
 
         if (ex.isPrep) {
@@ -1828,8 +1850,8 @@
             setsHtml += `
               <div class="set-row" id="set-row-${exIdx}-${setNum}">
                 <span>Set ${setNum}</span>
-                <input type="number" placeholder="Kg" id="ex-${exIdx}-set-${setNum}-kg" step="0.5" value="${s.kg || ''}">
-                <input type="number" placeholder="Reps" id="ex-${exIdx}-set-${setNum}-reps" value="${s.reps || ''}">
+                <input type="number" placeholder="Kg" id="ex-${exIdx}-set-${setNum}-kg" step="0.5" value="${s.kg || ''}" ${timedExercise ? 'style="display:none"' : ''}>
+                ${timedExercise ? `<input type="number" min="1" step="1" placeholder="Tempo (sec)" id="ex-${exIdx}-set-${setNum}-time" value="${s.time || ''}">` : `<input type="number" placeholder="Ripetizioni" id="ex-${exIdx}-set-${setNum}-reps" value="${s.reps || ''}">`}
               </div>
             `;
           });
@@ -1906,9 +1928,12 @@
           time: '', dist: '', speed: ''
         });
       } else {
+        const timed = isTimedExercise(exObj);
         activeWorkoutData.exercises.push({
           name: exObj.name,
-          setsData: [{ kg: '', reps: '' }, { kg: '', reps: '' }, { kg: '', reps: '' }]
+          isTimed: timed,
+          targetTime: timed ? '20-40' : undefined,
+          setsData: [{ kg: '', reps: '', time: '' }, { kg: '', reps: '', time: '' }, { kg: '', reps: '', time: '' }]
         });
       }
       renderExerciseBlocks();
@@ -2275,7 +2300,7 @@
     function moveEditorExercise(idx,direction){const targetIdx=idx+direction;if(targetIdx<0||targetIdx>=tempEditorExercises.length)return;[tempEditorExercises[idx],tempEditorExercises[targetIdx]]=[tempEditorExercises[targetIdx],tempEditorExercises[idx]];renderEditorExercisesList();}
     function changeEditorExerciseSets(idx,delta){const ex=tempEditorExercises[idx];if(!ex||!Array.isArray(ex.setsData))return;setEditorExerciseSets(idx,ex.setsData.length+delta);}
     function setEditorExerciseSets(idx,value){const ex=tempEditorExercises[idx];if(!ex)return;const n=Math.max(1,Math.min(10,parseInt(value)||3));ex.setsData=Array.from({length:n},(_,i)=>ex.setsData?.[i]||{kg:'',reps:''});renderEditorExercisesList();}
-    function setEditorExerciseTarget(idx,value){if(tempEditorExercises[idx])tempEditorExercises[idx].targetReps=value.trim();}
+    function setEditorExerciseTarget(idx,value){if(tempEditorExercises[idx]){if(isTimedExercise(tempEditorExercises[idx]))tempEditorExercises[idx].targetTime=value.trim();else tempEditorExercises[idx].targetReps=value.trim();}}
     function setEditorExerciseRest(idx,value){if(tempEditorExercises[idx])tempEditorExercises[idx].restSeconds=Math.max(0,parseInt(value)||0);}
     function setEditorExercisePrepDuration(idx,value){if(tempEditorExercises[idx])tempEditorExercises[idx].durationMin=value;}
     function renderEditorExercisesList(){
@@ -2284,10 +2309,10 @@
       const isCardio=document.getElementById('editor-template-is-cardio').checked,cfg=getGoalConfig(document.getElementById('editor-template-goal').value);
       tempEditorExercises.forEach((ex,idx)=>{const div=document.createElement('div');div.className='exercise-block';const first=idx===0,last=idx===tempEditorExercises.length-1;let cfgHtml='';
         if(ex.isPrep){cfgHtml=`<div class="template-exercise-config"><label>Durata (min)<input type="number" min="0" step="1" value="${escapeHtml(ex.durationMin||'')}" onchange="setEditorExercisePrepDuration(${idx},this.value)"></label></div>`;}
-        else if(!isCardio){const n=ex.setsData?.length||3,c=ex.targetReps||cfg.reps,r=ex.restSeconds||cfg.rest;cfgHtml=`<div class="template-exercise-config"><label>Serie<input type="number" min="1" max="10" value="${n}" onchange="setEditorExerciseSets(${idx},this.value)"></label><label>Ripetizioni target<input type="text" value="${escapeHtml(c)}" placeholder="8-12" onchange="setEditorExerciseTarget(${idx},this.value)"></label><label>Recupero (sec)<input type="number" min="0" step="15" value="${r}" onchange="setEditorExerciseRest(${idx},this.value)"></label></div>`;}
+        else if(!isCardio){const timed=isTimedExercise(ex),n=ex.setsData?.length||3,c=timed?(ex.targetTime||'20-40'):(ex.targetReps||cfg.reps),r=ex.restSeconds||cfg.rest;cfgHtml=`<div class="template-exercise-config"><label>Serie<input type="number" min="1" max="10" value="${n}" onchange="setEditorExerciseSets(${idx},this.value)"></label><label>${timed?'Tempo target (sec)':'Ripetizioni target'}<input type="text" value="${escapeHtml(c)}" placeholder="${timed?'20-40':'8-12'}" onchange="setEditorExerciseTarget(${idx},this.value)"></label><label>Recupero (sec)<input type="number" min="0" step="15" value="${r}" onchange="setEditorExerciseRest(${idx},this.value)"></label></div>`;}
         div.innerHTML=`<div class="exercise-header"><div class="reorder-btns"><button ${first?'disabled style="opacity:0.3;"':''} onclick="moveEditorExercise(${idx},-1)">▲</button><button ${last?'disabled style="opacity:0.3;"':''} onclick="moveEditorExercise(${idx},1)">▼</button></div><span style="font-weight:bold;color:var(--accent);flex-grow:1;margin-left:6px;">${idx+1}. ${escapeHtml(ex.name)}</span><button class="btn btn-sm btn-danger" onclick="removeExerciseFromEditor(${idx})">Rimuovi</button></div>${cfgHtml}`;container.appendChild(div);});
     }
-    function addExerciseToTemplateEditor(exObj){if(exObj.isPrep){tempEditorExercises.push({name:exObj.name,isPrep:true,durationMin:''});renderEditorExercisesList();return;}const isCardio=document.getElementById('editor-template-is-cardio').checked;if(isCardio)tempEditorExercises.push({name:exObj.name,time:'',dist:'',speed:''});else{const cfg=getGoalConfig(document.getElementById('editor-template-goal').value);tempEditorExercises.push({name:exObj.name,targetReps:cfg.reps,restSeconds:cfg.rest,setsData:[{kg:'',reps:''},{kg:'',reps:''},{kg:'',reps:''}]});}renderEditorExercisesList();}
+    function addExerciseToTemplateEditor(exObj){if(exObj.isPrep){tempEditorExercises.push({name:exObj.name,isPrep:true,durationMin:''});renderEditorExercisesList();return;}const isCardio=document.getElementById('editor-template-is-cardio').checked;if(isCardio)tempEditorExercises.push({name:exObj.name,time:'',dist:'',speed:''});else{const cfg=getGoalConfig(document.getElementById('editor-template-goal').value),timed=isTimedExercise(exObj);tempEditorExercises.push({name:exObj.name,isTimed:timed,targetReps:timed?undefined:cfg.reps,targetTime:timed?'20-40':undefined,restSeconds:cfg.rest,setsData:[{kg:'',reps:'',time:''},{kg:'',reps:'',time:''},{kg:'',reps:'',time:''}]});}renderEditorExercisesList();}
     function removeExerciseFromEditor(idx){tempEditorExercises.splice(idx,1);renderEditorExercisesList();}
     function saveTemplateFromEditor(){
       const title=document.getElementById('editor-template-title').value.trim(),goal=document.getElementById('editor-template-goal').value,isCardio=document.getElementById('editor-template-is-cardio').checked,notes=document.getElementById('editor-template-notes').value.trim();
@@ -2363,10 +2388,11 @@
               speed: ex.speed || '-'
             });
           } else {
-            const exData = { name: ex.name || 'Esercizio', targetReps: ex.targetReps || getGoalConfig(activeWorkoutData.goal).reps, restSeconds: Number(ex.restSeconds || getGoalConfig(activeWorkoutData.goal).rest), sets: [] };
+            const timed = isTimedExercise(ex);
+            const exData = { name: ex.name || 'Esercizio', isTimed: timed, targetReps: timed ? undefined : (ex.targetReps || getGoalConfig(activeWorkoutData.goal).reps), targetTime: timed ? (ex.targetTime || '20-40') : undefined, restSeconds: Number(ex.restSeconds || getGoalConfig(activeWorkoutData.goal).rest), sets: [] };
             const setsList = Array.isArray(ex.setsData) ? ex.setsData : [];
             setsList.forEach(s => {
-              exData.sets.push({ kg: s.kg || '-', reps: s.reps || '-' });
+              exData.sets.push(timed ? { kg: '-', reps: '-', time: s.time || '-' } : { kg: s.kg || '-', reps: s.reps || '-' });
             });
             workoutData.exercises.push(exData);
           }
@@ -2524,7 +2550,8 @@
         } else {
           exList.forEach(ex => {
             const setsList = Array.isArray(ex.sets) ? ex.sets : [];
-            const setsStr = setsList.length > 0 ? setsList.map(s => `${escapeHtml(s.kg)}kg x ${escapeHtml(s.reps)}`).join(' | ') : 'Nessun set';
+            const timed = isTimedExercise(ex);
+            const setsStr = setsList.length > 0 ? setsList.map(s => timed ? `${escapeHtml(s.time || '-')} sec` : `${escapeHtml(s.kg)}kg x ${escapeHtml(s.reps)}`).join(' | ') : 'Nessun set';
             const safeName = String(ex.name || '').replace(/'/g, "\\'");
             detailsHtml += `<div style="margin-bottom:8px;"><strong>${escapeHtml(ex.name)}:</strong> ${setsStr}<br><button class="btn btn-sm btn-secondary" style="margin-top:5px;" onclick="event.stopPropagation(); openExerciseHistory('${safeName}')">📈 Storico esercizio</button></div>`;
           });
@@ -2593,11 +2620,14 @@
             return { name: ex.name, time: ex.time, dist: ex.dist, speed: ex.speed };
           } else {
             const setsList = Array.isArray(ex.sets) ? ex.sets : [];
+            const timed = isTimedExercise(ex);
             return {
               name: ex.name,
-              targetReps: ex.targetReps || getGoalConfig(target.goal).reps,
+              isTimed: timed,
+              targetReps: timed ? undefined : (ex.targetReps || getGoalConfig(target.goal).reps),
+              targetTime: timed ? (ex.targetTime || '20-40') : undefined,
               restSeconds: ex.restSeconds || getGoalConfig(target.goal).rest,
-              setsData: setsList.map(s => ({ kg: s.kg === '-' ? '' : s.kg, reps: s.reps === '-' ? '' : s.reps }))
+              setsData: setsList.map(s => ({ kg: s.kg === '-' ? '' : s.kg, reps: s.reps === '-' ? '' : s.reps, time: s.time === '-' ? '' : (s.time || '') }))
             };
           }
         })
@@ -2647,10 +2677,10 @@
     }
 
     function downloadBlob(blob,filename){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),500);}
-    function exportSharedTemplate(key){const tpl=getWorkoutTemplates()[key];if(!tpl)return;const t=normalizeTemplate(tpl),shared={type:'diario-di-ferro-workout-template',version:1,title:t.title,goal:t.goal,exercises:t.exercises.map(e=>e.isPrep?{name:e.name,isPrep:true,durationMin:e.durationMin||''}:(t.isCardio?{name:e.name,time:e.time||'',dist:e.dist||'',speed:e.speed||''}:{name:e.name,sets:e.setsData.length,targetReps:e.targetReps,restSeconds:e.restSeconds})),notes:t.notes||''};downloadBlob(new Blob([JSON.stringify(shared,null,2)],{type:'application/json'}),`${(t.title||'scheda').replace(/[^a-z0-9àèéìòù _-]/gi,'').trim().replace(/\s+/g,'_')}.json`);}
-    function importSharedTemplate(event){const file=event.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const d=JSON.parse(e.target.result);if(!d||d.type!=='diario-di-ferro-workout-template'||!Array.isArray(d.exercises)||!d.exercises.length||!d.exercises.every(x=>x&&typeof x.name==='string'&&x.name.trim()))throw 0;const goal=d.goal||'ipertrofia',isCardio=d.exercises.some(x=>!x.isPrep&&x.time!==undefined),templates=getWorkoutTemplates(),base=(d.title||'Scheda importata').trim();let title=base,n=2;while(Object.values(templates).some(t=>(t.title||'').toLowerCase()===title.toLowerCase()))title=`${base} (${n++})`;const cfg=getGoalConfig(goal);const exercises=d.exercises.map(e=>e.isPrep?{name:e.name,isPrep:true,durationMin:e.durationMin||''}:(isCardio?{name:e.name,time:e.time||'',dist:e.dist||'',speed:e.speed||''}:{name:e.name,targetReps:e.targetReps||cfg.reps,restSeconds:Number(e.restSeconds)||cfg.rest,setsData:Array.from({length:Math.max(1,Math.min(10,Number(e.sets)||3))},()=>({kg:'',reps:''}))}));templates['IMPORTED_'+Date.now()]={title,goal,isCardio,notes:d.notes||'',exercises,createdAt:new Date().toISOString(),imported:true};localStorage.setItem('workout_templates',JSON.stringify(templates));populateTemplateSelect();renderTemplateList();showToast(`Scheda importata come "${title}".`);}catch(err){showToast('Errore: il file non è una scheda JSON valida di Diario di Ferro.');}event.target.value='';};reader.readAsText(file);}
-    function getExerciseHistoryData(name){const history=JSON.parse(localStorage.getItem('workout_history')||'[]'),rows=[];history.filter(s=>!s.isCardio).forEach(session=>(session.exercises||[]).forEach(ex=>{if((ex.name||'').toLowerCase()!==name.toLowerCase())return;const sets=(Array.isArray(ex.sets)?ex.sets:[]).filter(x=>x.kg!=='-'||x.reps!=='-');const setDetails=sets.map(s=>{const kg=parseFloat(String(s.kg).replace(',','.'));return {kg:Number.isFinite(kg)?kg:null, reps:s.reps};});const weights=setDetails.map(s=>s.kg).filter(Number.isFinite);rows.push({date:session.date,load:weights.length?Math.max(...weights):null,sets:sets.length,reps:sets.map(x=>x.reps).join(' / '),setDetails});}));return rows.sort((a,b)=>new Date(a.date)-new Date(b.date));}
-    function openExerciseHistory(name){const modal=document.getElementById('exercise-history-modal'),rows=getExerciseHistoryData(name);document.getElementById('exercise-history-title').textContent=`Storico: ${name}`;if(!rows.length){document.getElementById('exercise-history-summary').textContent='Nessuna prestazione registrata.';document.getElementById('exercise-history-table').innerHTML='';drawExerciseHistoryChart([]);modal.classList.add('active');return;}const last=rows[rows.length-1];document.getElementById('exercise-history-summary').textContent=`Ultima seduta: ${last.load!==null?last.load+' kg':'corpo libero'} · ${last.sets} serie · ${last.reps||'-'}`;document.getElementById('exercise-history-table').innerHTML='<table class="history-table"><thead><tr><th>Data</th><th>Carico</th><th>Serie</th><th>Ripetizioni</th></tr></thead><tbody>'+rows.slice().reverse().map(r=>`<tr><td>${new Date(r.date).toLocaleDateString('it-IT')}</td><td>${r.load!==null?r.load+' kg':'—'}</td><td>${r.sets}</td><td>${escapeHtml(r.reps||'—')}</td></tr>`).join('')+'</tbody></table>';drawExerciseHistoryChart(rows);modal.classList.add('active');}
+    function exportSharedTemplate(key){const tpl=getWorkoutTemplates()[key];if(!tpl)return;const t=normalizeTemplate(tpl),shared={type:'diario-di-ferro-workout-template',version:1,title:t.title,goal:t.goal,exercises:t.exercises.map(e=>e.isPrep?{name:e.name,isPrep:true,durationMin:e.durationMin||''}:(t.isCardio?{name:e.name,time:e.time||'',dist:e.dist||'',speed:e.speed||''}:(isTimedExercise(e)?{name:e.name,isTimed:true,sets:e.setsData.length,targetTime:e.targetTime||'20-40',restSeconds:e.restSeconds}:{name:e.name,sets:e.setsData.length,targetReps:e.targetReps,restSeconds:e.restSeconds}))),notes:t.notes||''};downloadBlob(new Blob([JSON.stringify(shared,null,2)],{type:'application/json'}),`${(t.title||'scheda').replace(/[^a-z0-9àèéìòù _-]/gi,'').trim().replace(/\s+/g,'_')}.json`);}
+    function importSharedTemplate(event){const file=event.target.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const d=JSON.parse(e.target.result);if(!d||d.type!=='diario-di-ferro-workout-template'||!Array.isArray(d.exercises)||!d.exercises.length||!d.exercises.every(x=>x&&typeof x.name==='string'&&x.name.trim()))throw 0;const goal=d.goal||'ipertrofia',isCardio=d.exercises.some(x=>!x.isPrep&&x.time!==undefined),templates=getWorkoutTemplates(),base=(d.title||'Scheda importata').trim();let title=base,n=2;while(Object.values(templates).some(t=>(t.title||'').toLowerCase()===title.toLowerCase()))title=`${base} (${n++})`;const cfg=getGoalConfig(goal);const exercises=d.exercises.map(e=>e.isPrep?{name:e.name,isPrep:true,durationMin:e.durationMin||''}:(isCardio?{name:e.name,time:e.time||'',dist:e.dist||'',speed:e.speed||''}:(isTimedExercise(e)?{name:e.name,isTimed:true,targetTime:e.targetTime||'20-40',restSeconds:Number(e.restSeconds)||cfg.rest,setsData:Array.from({length:Math.max(1,Math.min(10,Number(e.sets)||3))},()=>({kg:'',reps:'',time:''}))}:{name:e.name,targetReps:e.targetReps||cfg.reps,restSeconds:Number(e.restSeconds)||cfg.rest,setsData:Array.from({length:Math.max(1,Math.min(10,Number(e.sets)||3))},()=>({kg:'',reps:''}))})));templates['IMPORTED_'+Date.now()]={title,goal,isCardio,notes:d.notes||'',exercises,createdAt:new Date().toISOString(),imported:true};localStorage.setItem('workout_templates',JSON.stringify(templates));populateTemplateSelect();renderTemplateList();showToast(`Scheda importata come "${title}".`);}catch(err){showToast('Errore: il file non è una scheda JSON valida di Diario di Ferro.');}event.target.value='';};reader.readAsText(file);}
+    function getExerciseHistoryData(name){const history=JSON.parse(localStorage.getItem('workout_history')||'[]'),rows=[];history.filter(s=>!s.isCardio).forEach(session=>(session.exercises||[]).forEach(ex=>{if((ex.name||'').toLowerCase()!==name.toLowerCase())return;const timed=isTimedExercise(ex),sets=(Array.isArray(ex.sets)?ex.sets:[]).filter(x=>timed?x.time&&x.time!=='-':(x.kg!=='-'||x.reps!=='-'));const setDetails=sets.map(s=>{const kg=parseFloat(String(s.kg).replace(',','.'));return {kg:Number.isFinite(kg)?kg:null, reps:s.reps, time:s.time};});const weights=setDetails.map(s=>s.kg).filter(Number.isFinite);rows.push({date:session.date,load:weights.length?Math.max(...weights):null,sets:sets.length,reps:timed?sets.map(x=>x.time+' sec').join(' / '):sets.map(x=>x.reps).join(' / '),setDetails,timed});}));return rows.sort((a,b)=>new Date(a.date)-new Date(b.date));}
+    function openExerciseHistory(name){const modal=document.getElementById('exercise-history-modal'),rows=getExerciseHistoryData(name);document.getElementById('exercise-history-title').textContent=`Storico: ${name}`;if(!rows.length){document.getElementById('exercise-history-summary').textContent='Nessuna prestazione registrata.';document.getElementById('exercise-history-table').innerHTML='';drawExerciseHistoryChart([]);modal.classList.add('active');return;}const last=rows[rows.length-1];document.getElementById('exercise-history-summary').textContent=`Ultima seduta: ${last.load!==null?last.load+' kg':'corpo libero'} · ${last.sets} serie · ${last.reps||'-'}`;document.getElementById('exercise-history-table').innerHTML='<table class="history-table"><thead><tr><th>Data</th><th>Carico</th><th>Serie</th><th>'+(last.timed?'Tempo':'Ripetizioni')+'</th></tr></thead><tbody>'+rows.slice().reverse().map(r=>`<tr><td>${new Date(r.date).toLocaleDateString('it-IT')}</td><td>${r.load!==null?r.load+' kg':'—'}</td><td>${r.sets}</td><td>${escapeHtml(r.reps||'—')}</td></tr>`).join('')+'</tbody></table>';drawExerciseHistoryChart(rows);modal.classList.add('active');}
     function closeExerciseHistory(){document.getElementById('exercise-history-modal').classList.remove('active');}
     const EXERCISE_HISTORY_PALETTE=['var(--accent)','var(--accent2)','var(--cat-dorso)','var(--cat-tricipiti)','var(--cat-gambe)','var(--cat-bicipiti)','var(--cat-spalle)','var(--cat-core)'];
     function drawExerciseHistoryChart(rows){
