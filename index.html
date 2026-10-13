@@ -1164,27 +1164,31 @@
     function playTimerAlert() {
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        const ctx = new AudioCtx();
-        const beep = (startTime, freq) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.value = freq;
-          gain.gain.setValueAtTime(0.3, startTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(startTime);
-          osc.stop(startTime + 0.25);
-        };
-        const now = ctx.currentTime;
-        beep(now, 880);
-        beep(now + 0.3, 880);
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const now = ctx.currentTime;
+          // Quattro segnali più acuti, distribuiti su circa 2 secondi.
+          for (let i = 0; i < 5; i++) {
+            const startTime = now + i * 0.4;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1320, startTime);
+            gain.gain.setValueAtTime(0.0001, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.28, startTime + 0.025);
+            gain.gain.setValueAtTime(0.28, startTime + 0.20);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.28);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + 0.29);
+          }
+          window.setTimeout(() => { if (ctx.state !== 'closed') ctx.close().catch(() => {}); }, 2400);
+          if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+        }
       } catch (e) {}
 
-      if (navigator.vibrate) {
-        navigator.vibrate([200, 100, 200]);
-      }
+      if (navigator.vibrate) navigator.vibrate([180, 100, 180, 100, 180]);
     }
 
     const TIMER_COLOR_STOPS = [
@@ -1225,20 +1229,41 @@
       }
     }
 
+    function runTimerTick() {
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (timerTotalSeconds > 0) {
+          if (timerSeconds > 0) {
+            timerSeconds--;
+            updateTimerDisplay();
+          }
+          if (timerSeconds <= 0) {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timerSeconds = 0;
+            timerTotalSeconds = 0;
+            document.getElementById('timer-toggle-btn').innerText = 'Start';
+            updateTimerDisplay();
+            playTimerAlert();
+          }
+        } else {
+          timerSeconds++;
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+
     function toggleTimer() {
       if (isTimerRunning) {
         clearInterval(timerInterval);
         isTimerRunning = false;
         document.getElementById('timer-toggle-btn').innerText = 'Start';
       } else {
+        // Se è un conto alla rovescia in pausa, riprende senza convertirlo in cronometro.
         isTimerRunning = true;
-        timerTotalSeconds = 0;
         updateTimerDisplay();
         document.getElementById('timer-toggle-btn').innerText = 'Pausa';
-        timerInterval = setInterval(() => {
-          timerSeconds++;
-          updateTimerDisplay();
-        }, 1000);
+        runTimerTick();
       }
     }
 
@@ -1253,24 +1278,12 @@
 
     function startQuickTimer(seconds) {
       clearInterval(timerInterval);
-      timerSeconds = seconds;
-      timerTotalSeconds = seconds;
+      timerSeconds = Math.max(1, Math.floor(Number(seconds) || 1));
+      timerTotalSeconds = timerSeconds;
       updateTimerDisplay();
       isTimerRunning = true;
       document.getElementById('timer-toggle-btn').innerText = 'Pausa';
-
-      timerInterval = setInterval(() => {
-        if (timerSeconds > 0) {
-          timerSeconds--;
-          updateTimerDisplay();
-        } else {
-          clearInterval(timerInterval);
-          isTimerRunning = false;
-          timerTotalSeconds = 0;
-          document.getElementById('timer-toggle-btn').innerText = 'Start';
-          playTimerAlert();
-        }
-      }, 1000);
+      runTimerTick();
     }
 
     function setDefaultDateTime() {
@@ -1432,16 +1445,6 @@
       el.style.display = 'block';
     }
 
-    function updateLifestyleRecoveryNote(isCardio) {
-      const el = document.getElementById('lifestyle-recovery-note');
-      if (!el) return;
-      const profile = getUserProfile();
-      const bonus = getLifestyleRestBonus(profile.lifestyle);
-      if (isCardio || !bonus) { el.style.display = 'none'; return; }
-      const labels = { attivo: 'Attivo', 'molto-attivo': 'Molto attivo' };
-      el.textContent = `💡 Stile di vita: ${labels[profile.lifestyle] || profile.lifestyle} → valuta di aggiungere circa +${bonus}s di recupero tra le serie rispetto a quanto impostato nella scheda.`;
-      el.style.display = 'block';
-    }
 
     /* PROFILO UTENTE */
     function getUserProfile() {
@@ -1526,10 +1529,11 @@
       const val = parseFloat(String(input.value).replace(',', '.'));
       if (!Number.isFinite(val) || val <= 0) { showToast('Inserisci un peso valido.'); return; }
       const profile = getUserProfile();
-      const today = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const existingIdx = profile.weightHistory.findIndex(w => (w.date || '').slice(0, 10) === today);
       if (existingIdx >= 0) profile.weightHistory[existingIdx].weight = val;
-      else profile.weightHistory.push({ date: new Date().toISOString(), weight: val });
+      else profile.weightHistory.push({ date: now.toISOString(), weight: val });
       profile.weightHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
 
       const persisted = persistUserProfile(profile);
@@ -1753,8 +1757,6 @@
 
     function getProgressionAdvice(exerciseName, targetReps) {
       const rows=getExerciseHistoryData(exerciseName); if(!rows.length) return null;
-      const nums=String(targetReps||'').match(/(??????????)/g);
-      const range=String(targetReps||'').match(/(??????????)/);
       const m=String(targetReps||'').match(/(\d+)\s*[-–]\s*(\d+)/); const last=rows[rows.length-1];
       const reps=(last.reps||'').split('/').map(x=>parseFloat(String(x).trim())).filter(Number.isFinite);
       if(!reps.length) return null;
@@ -2695,6 +2697,7 @@
         type: 'diario-di-ferro-backup',
         version: 1,
         history: JSON.parse(localStorage.getItem('workout_history') || '[]'),
+        userProfile: JSON.parse(localStorage.getItem('user_profile') || 'null'),
         customExercises: JSON.parse(localStorage.getItem('custom_exercises') || '[]'),
         templates: JSON.parse(localStorage.getItem('workout_templates') || '{}')
       };
@@ -2720,64 +2723,97 @@
     }
 
     function importData(event) {
-      const file = event.target.files[0];
+      const file = event.target.files && event.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
       reader.onload = function(e) {
         try {
           const imported = JSON.parse(e.target.result);
-
-          // Un file con un "type" che non è il nostro backup è di un altro tipo
-          // (es. una scheda condivisa) e va rifiutato esplicitamente, invece
-          // di dare un falso "successo" senza importare nulla.
           if (imported && typeof imported === 'object' && !Array.isArray(imported)
               && imported.type && imported.type !== 'diario-di-ferro-backup') {
-            showToast('Errore: questo file non è un backup di Diario di Ferro (sembra un altro tipo di file, ad es. una scheda condivisa). Per importare una scheda usa il pulsante "Importa scheda" nella sezione Schede.');
+            showToast('Errore: questo file non è un backup di Diario di Ferro. Per importare una singola scheda usa "Importa scheda" nella sezione Schede.');
             event.target.value = '';
             return;
           }
 
           let matched = false;
+          const mergeHistory = (incoming) => {
+            const current = JSON.parse(localStorage.getItem('workout_history') || '[]');
+            const merged = [...(Array.isArray(incoming) ? incoming : []), ...current];
+            const unique = new Map();
+            merged.forEach((item) => {
+              if (!item || typeof item !== 'object') return;
+              // Le vecchie registrazioni possono non avere id: in quel caso non collassarle tutte su undefined.
+              const key = item.id !== undefined && item.id !== null && item.id !== ''
+                ? `id:${item.id}`
+                : `legacy:${JSON.stringify(item)}`;
+              if (!unique.has(key)) unique.set(key, item);
+            });
+            const result = Array.from(unique.values());
+            result.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+            localStorage.setItem('workout_history', JSON.stringify(result));
+          };
 
           if (Array.isArray(imported)) {
-            // Compatibilità vecchio formato (solo storico, senza wrapper)
+            // Compatibilità con il vecchio formato contenente soltanto lo storico.
             matched = true;
-            let currentHistory = JSON.parse(localStorage.getItem('workout_history') || '[]');
-            let merged = [...imported, ...currentHistory];
-            const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
-            unique.sort((a, b) => new Date(b.date) - new Date(a.date));
-            localStorage.setItem('workout_history', JSON.stringify(unique));
+            mergeHistory(imported);
           } else if (imported && typeof imported === 'object') {
-            if (imported.history && Array.isArray(imported.history)) {
+            if (Array.isArray(imported.history)) {
               matched = true;
-              let currentHistory = JSON.parse(localStorage.getItem('workout_history') || '[]');
-              let merged = [...imported.history, ...currentHistory];
-              const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
-              unique.sort((a, b) => new Date(b.date) - new Date(a.date));
-              localStorage.setItem('workout_history', JSON.stringify(unique));
+              mergeHistory(imported.history);
             }
-            if (imported.customExercises && Array.isArray(imported.customExercises)) {
+            if (Array.isArray(imported.customExercises)) {
               matched = true;
-              localStorage.setItem('custom_exercises', JSON.stringify(imported.customExercises));
+              const current = JSON.parse(localStorage.getItem('custom_exercises') || '[]');
+              const byId = new Map();
+              [...current, ...imported.customExercises].forEach((item) => {
+                if (!item || typeof item !== 'object') return;
+                const key = item.id ? `id:${item.id}` : `name:${String(item.name || '').trim().toLocaleLowerCase('it-IT')}`;
+                if (key !== 'name:') byId.set(key, item);
+              });
+              localStorage.setItem('custom_exercises', JSON.stringify(Array.from(byId.values())));
             }
-            if (imported.templates && typeof imported.templates === 'object') {
+            if (imported.templates && typeof imported.templates === 'object' && !Array.isArray(imported.templates)) {
               matched = true;
-              const normalizedImported={}; for(const [k,t] of Object.entries(imported.templates)){normalizedImported[k]=normalizeTemplate(t);} localStorage.setItem('workout_templates', JSON.stringify(normalizedImported));
+              const current = JSON.parse(localStorage.getItem('workout_templates') || '{}');
+              const mergedTemplates = { ...(current && typeof current === 'object' ? current : {}) };
+              // In caso di chiave uguale prevale la versione importata; le altre schede locali restano.
+              for (const [k, t] of Object.entries(imported.templates)) mergedTemplates[k] = normalizeTemplate(t);
+              localStorage.setItem('workout_templates', JSON.stringify(mergedTemplates));
+            }
+            if (imported.userProfile && typeof imported.userProfile === 'object' && !Array.isArray(imported.userProfile)) {
+              matched = true;
+              const profile = imported.userProfile;
+              const safeProfile = {
+                name: profile.name || '',
+                height: profile.height || '',
+                lifestyle: profile.lifestyle || '',
+                weeklyWorkouts: profile.weeklyWorkouts || '',
+                weightHistory: Array.isArray(profile.weightHistory) ? profile.weightHistory : [],
+                identityLocked: profile.identityLocked !== false && !!profile.name && !!profile.height
+              };
+              localStorage.setItem('user_profile', JSON.stringify(safeProfile));
             }
           }
 
           if (!matched) {
-            showToast('Errore: il file selezionato non contiene dati di backup riconoscibili (nessuno storico, esercizio personalizzato o scheda trovati).');
+            showToast('Errore: il file selezionato non contiene dati di backup riconoscibili.');
             event.target.value = '';
             return;
           }
 
-          showToast('Importazione completata con successo!');
           populateTemplateSelect();
           renderHistory();
+          renderArchiveList();
+          renderProfileTab();
+          if (typeof updateWeeklyWorkoutPlanNotice === 'function') updateWeeklyWorkoutPlanNotice();
+          showToast('Importazione completata. Storico, schede ed esercizi sono stati uniti; il profilo e lo storico peso sono stati ripristinati se presenti nel backup.');
         } catch (err) {
           showToast('Errore nella lettura del file JSON.');
+        } finally {
+          event.target.value = '';
         }
       };
       reader.readAsText(file);
