@@ -542,6 +542,7 @@
       flex-direction: column;
       padding: 15px;
       overflow-y: auto;
+      overscroll-behavior: contain; /* lo scroll non "scappa" sulla pagina sotto */
     }
 
     .fullscreen-modal.active {
@@ -1172,30 +1173,47 @@
       setTimeout(dismiss, duration);
     }
 
+    /* AUDIO TIMER: un solo AudioContext riutilizzato (sbloccato al tocco su Start/preset, necessario su iOS) */
+    let timerAudioCtx = null;
+
+    function getTimerAudioCtx() {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      if (!timerAudioCtx || timerAudioCtx.state === 'closed') timerAudioCtx = new AudioCtx();
+      if (timerAudioCtx.state === 'suspended') timerAudioCtx.resume().catch(() => {});
+      return timerAudioCtx;
+    }
+
+    function playBeep(ctx, startTime, freq, duration, volume) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, startTime);
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(volume, startTime + 0.02);
+      gain.gain.setValueAtTime(volume, startTime + duration - 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration + 0.01);
+    }
+
+    // Bip breve e più grave: uno per ciascuno degli ultimi 5 secondi del conto alla rovescia.
+    function playCountdownBeep() {
+      try {
+        const ctx = getTimerAudioCtx();
+        if (ctx) playBeep(ctx, ctx.currentTime, 880, 0.15, 0.22);
+      } catch (e) {}
+    }
+
+    // Segnale finale: 5 bip acuti distribuiti su circa 2 secondi + vibrazione.
     function playTimerAlert() {
       try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtx) {
-          const ctx = new AudioCtx();
+        const ctx = getTimerAudioCtx();
+        if (ctx) {
           const now = ctx.currentTime;
-          // Quattro segnali più acuti, distribuiti su circa 2 secondi.
-          for (let i = 0; i < 5; i++) {
-            const startTime = now + i * 0.4;
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(1320, startTime);
-            gain.gain.setValueAtTime(0.0001, startTime);
-            gain.gain.exponentialRampToValueAtTime(0.28, startTime + 0.025);
-            gain.gain.setValueAtTime(0.28, startTime + 0.20);
-            gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.28);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(startTime);
-            osc.stop(startTime + 0.29);
-          }
-          window.setTimeout(() => { if (ctx.state !== 'closed') ctx.close().catch(() => {}); }, 2400);
-          if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+          for (let i = 0; i < 5; i++) playBeep(ctx, now + i * 0.4, 1320, 0.28, 0.28);
         }
       } catch (e) {}
 
@@ -1247,6 +1265,8 @@
           if (timerSeconds > 0) {
             timerSeconds--;
             updateTimerDisplay();
+            // Ultimi 5 secondi: un bip per ogni secondo (05, 04, 03, 02, 01); a 00 parte il segnale finale.
+            if (timerSeconds > 0 && timerSeconds <= 5) playCountdownBeep();
           }
           if (timerSeconds <= 0) {
             clearInterval(timerInterval);
@@ -1272,6 +1292,7 @@
       } else {
         // Se è un conto alla rovescia in pausa, riprende senza convertirlo in cronometro.
         isTimerRunning = true;
+        getTimerAudioCtx(); // sblocca l'audio durante il tocco dell'utente
         updateTimerDisplay();
         document.getElementById('timer-toggle-btn').innerText = 'Pausa';
         runTimerTick();
@@ -1291,6 +1312,7 @@
       clearInterval(timerInterval);
       timerSeconds = Math.max(1, Math.floor(Number(seconds) || 1));
       timerTotalSeconds = timerSeconds;
+      getTimerAudioCtx(); // sblocca l'audio durante il tocco dell'utente
       updateTimerDisplay();
       isTimerRunning = true;
       document.getElementById('timer-toggle-btn').innerText = 'Pausa';
@@ -2232,6 +2254,7 @@
 
     function openTemplateEditor(key) {
       editingTemplateKey = key;
+      document.getElementById('editor-exercises-list').innerHTML = ''; // niente campi residui della scheda precedente
       const templates = getWorkoutTemplates();
 
       document.getElementById('template-list-view').style.display = 'none';
@@ -2278,14 +2301,16 @@
     function closeTemplateEditor() {
       editingTemplateKey = null;
       tempEditorExercises = [];
+      document.getElementById('editor-exercises-list').innerHTML = '';
       document.getElementById('template-list-view').style.display = 'block';
       document.getElementById('template-editor-view').style.display = 'none';
       renderTemplateList();
     }
 
     function applyGoalDefaultsToEditor(forceAll=false){
+      syncEditorFormToData();
       const goal=document.getElementById('editor-template-goal')?.value||'ipertrofia', cfg=getGoalConfig(goal), hint=document.getElementById('editor-goal-hint');
-      if(hint) hint.textContent=cfg.hint; if(document.getElementById('editor-template-is-cardio')?.checked)return;
+      if(hint) hint.textContent=cfg.hint; if(document.getElementById('editor-template-is-cardio')?.checked){renderEditorExercisesList();return;}
       tempEditorExercises.forEach(ex=>{if(ex.isPrep)return;if(forceAll||!ex.targetReps)ex.targetReps=cfg.reps;if(forceAll||!ex.restSeconds)ex.restSeconds=cfg.rest;}); renderEditorExercisesList();
     }
     function updateEditorGoalVisibility(){
@@ -2293,28 +2318,44 @@
       if(wrap) wrap.style.display=isCardio?'none':'block';
     }
     function toggleEditorCardioMode(){
+      syncEditorFormToData();
       const isCardio=document.getElementById('editor-template-is-cardio').checked, cfg=getGoalConfig(document.getElementById('editor-template-goal').value);
       updateEditorGoalVisibility();
       tempEditorExercises.forEach(ex=>{if(ex.isPrep)return;if(isCardio){delete ex.setsData;delete ex.targetReps;delete ex.restSeconds;ex.time='';ex.dist='';ex.speed='';}else{delete ex.time;delete ex.dist;delete ex.speed;ex.setsData=[{kg:'',reps:''},{kg:'',reps:''},{kg:'',reps:''}];ex.targetReps=cfg.reps;ex.restSeconds=cfg.rest;}}); renderEditorExercisesList(); applyGoalDefaultsToEditor(false);
     }
-    function moveEditorExercise(idx,direction){const targetIdx=idx+direction;if(targetIdx<0||targetIdx>=tempEditorExercises.length)return;[tempEditorExercises[idx],tempEditorExercises[targetIdx]]=[tempEditorExercises[targetIdx],tempEditorExercises[idx]];renderEditorExercisesList();}
-    function changeEditorExerciseSets(idx,delta){const ex=tempEditorExercises[idx];if(!ex||!Array.isArray(ex.setsData))return;setEditorExerciseSets(idx,ex.setsData.length+delta);}
+    function moveEditorExercise(idx,direction){syncEditorFormToData();const targetIdx=idx+direction;if(targetIdx<0||targetIdx>=tempEditorExercises.length)return;[tempEditorExercises[idx],tempEditorExercises[targetIdx]]=[tempEditorExercises[targetIdx],tempEditorExercises[idx]];renderEditorExercisesList();}
+    function changeEditorExerciseSets(idx,delta){syncEditorFormToData();const ex=tempEditorExercises[idx];if(!ex||!Array.isArray(ex.setsData))return;setEditorExerciseSets(idx,ex.setsData.length+delta);}
     function setEditorExerciseSets(idx,value){const ex=tempEditorExercises[idx];if(!ex)return;const n=Math.max(1,Math.min(10,parseInt(value)||3));ex.setsData=Array.from({length:n},(_,i)=>ex.setsData?.[i]||{kg:'',reps:''});renderEditorExercisesList();}
     function setEditorExerciseTarget(idx,value){if(tempEditorExercises[idx]){if(isTimedExercise(tempEditorExercises[idx]))tempEditorExercises[idx].targetTime=value.trim();else tempEditorExercises[idx].targetReps=value.trim();}}
     function setEditorExerciseRest(idx,value){if(tempEditorExercises[idx])tempEditorExercises[idx].restSeconds=Math.max(0,parseInt(value)||0);}
     function setEditorExercisePrepDuration(idx,value){if(tempEditorExercises[idx])tempEditorExercises[idx].durationMin=value;}
+    // Legge i valori attualmente scritti nei campi dell'editor (anche se onchange non è ancora scattato)
+    // e li copia in tempEditorExercises, prima di ogni operazione che ridisegna la lista o salva.
+    function syncEditorFormToData(){
+      const list=document.getElementById('editor-exercises-list'); if(!list)return;
+      list.querySelectorAll('[data-ex-field]').forEach(inp=>{
+        const ex=tempEditorExercises[Number(inp.dataset.exIdx)]; if(!ex)return; const v=inp.value;
+        switch(inp.dataset.exField){
+          case 'duration': ex.durationMin=v; break;
+          case 'sets': {const n=Math.max(1,Math.min(10,parseInt(v)||3)),cur=ex.setsData||[]; if(cur.length!==n)ex.setsData=Array.from({length:n},(_,i)=>cur[i]||{kg:'',reps:''}); break;}
+          case 'target': if(isTimedExercise(ex))ex.targetTime=v.trim(); else ex.targetReps=v.trim(); break;
+          case 'rest': ex.restSeconds=Math.max(0,parseInt(v)||0); break;
+        }
+      });
+    }
     function renderEditorExercisesList(){
       const container=document.getElementById('editor-exercises-list');container.innerHTML='';
       if(!tempEditorExercises.length){container.innerHTML='<p class="small-note">Nessun esercizio presente in questa scheda.</p>';return;}
       const isCardio=document.getElementById('editor-template-is-cardio').checked,cfg=getGoalConfig(document.getElementById('editor-template-goal').value);
       tempEditorExercises.forEach((ex,idx)=>{const div=document.createElement('div');div.className='exercise-block';const first=idx===0,last=idx===tempEditorExercises.length-1;let cfgHtml='';
-        if(ex.isPrep){cfgHtml=`<div class="template-exercise-config"><label>Durata (min)<input type="number" min="0" step="1" value="${escapeHtml(ex.durationMin||'')}" onchange="setEditorExercisePrepDuration(${idx},this.value)"></label></div>`;}
-        else if(!isCardio){const timed=isTimedExercise(ex),n=ex.setsData?.length||3,c=timed?(ex.targetTime||'20-40'):(ex.targetReps||cfg.reps),r=ex.restSeconds||cfg.rest;cfgHtml=`<div class="template-exercise-config"><label>Serie<input type="number" min="1" max="10" value="${n}" onchange="setEditorExerciseSets(${idx},this.value)"></label><label>${timed?'Tempo target (sec)':'Ripetizioni target'}<input type="text" value="${escapeHtml(c)}" placeholder="${timed?'20-40':'8-12'}" onchange="setEditorExerciseTarget(${idx},this.value)"></label><label>Recupero (sec)<input type="number" min="0" step="15" value="${r}" onchange="setEditorExerciseRest(${idx},this.value)"></label></div>`;}
+        if(ex.isPrep){cfgHtml=`<div class="template-exercise-config"><label>Durata (min)<input type="number" min="0" step="1" value="${escapeHtml(ex.durationMin||'')}" onchange="setEditorExercisePrepDuration(${idx},this.value)" data-ex-idx="${idx}" data-ex-field="duration"></label></div>`;}
+        else if(!isCardio){const timed=isTimedExercise(ex),n=ex.setsData?.length||3,c=timed?(ex.targetTime||'20-40'):(ex.targetReps||cfg.reps),r=ex.restSeconds||cfg.rest;cfgHtml=`<div class="template-exercise-config"><label>Serie<input type="number" min="1" max="10" value="${n}" onchange="setEditorExerciseSets(${idx},this.value)" data-ex-idx="${idx}" data-ex-field="sets"></label><label>${timed?'Tempo target (sec)':'Ripetizioni target'}<input type="text" value="${escapeHtml(c)}" placeholder="${timed?'20-40':'8-12'}" onchange="setEditorExerciseTarget(${idx},this.value)" data-ex-idx="${idx}" data-ex-field="target"></label><label>Recupero (sec)<input type="number" min="0" step="15" value="${r}" onchange="setEditorExerciseRest(${idx},this.value)" data-ex-idx="${idx}" data-ex-field="rest"></label></div>`;}
         div.innerHTML=`<div class="exercise-header"><div class="reorder-btns"><button ${first?'disabled style="opacity:0.3;"':''} onclick="moveEditorExercise(${idx},-1)">▲</button><button ${last?'disabled style="opacity:0.3;"':''} onclick="moveEditorExercise(${idx},1)">▼</button></div><span style="font-weight:bold;color:var(--accent);flex-grow:1;margin-left:6px;">${idx+1}. ${escapeHtml(ex.name)}</span><button class="btn btn-sm btn-danger" onclick="removeExerciseFromEditor(${idx})">Rimuovi</button></div>${cfgHtml}`;container.appendChild(div);});
     }
-    function addExerciseToTemplateEditor(exObj){if(exObj.isPrep){tempEditorExercises.push({name:exObj.name,isPrep:true,durationMin:''});renderEditorExercisesList();return;}const isCardio=document.getElementById('editor-template-is-cardio').checked;if(isCardio)tempEditorExercises.push({name:exObj.name,time:'',dist:'',speed:''});else{const cfg=getGoalConfig(document.getElementById('editor-template-goal').value),timed=isTimedExercise(exObj);tempEditorExercises.push({name:exObj.name,isTimed:timed,targetReps:timed?undefined:cfg.reps,targetTime:timed?'20-40':undefined,restSeconds:cfg.rest,setsData:[{kg:'',reps:'',time:''},{kg:'',reps:'',time:''},{kg:'',reps:'',time:''}]});}renderEditorExercisesList();}
-    function removeExerciseFromEditor(idx){tempEditorExercises.splice(idx,1);renderEditorExercisesList();}
+    function addExerciseToTemplateEditor(exObj){syncEditorFormToData();if(exObj.isPrep){tempEditorExercises.push({name:exObj.name,isPrep:true,durationMin:''});renderEditorExercisesList();return;}const isCardio=document.getElementById('editor-template-is-cardio').checked;if(isCardio)tempEditorExercises.push({name:exObj.name,time:'',dist:'',speed:''});else{const cfg=getGoalConfig(document.getElementById('editor-template-goal').value),timed=isTimedExercise(exObj);tempEditorExercises.push({name:exObj.name,isTimed:timed,targetReps:timed?undefined:cfg.reps,targetTime:timed?'20-40':undefined,restSeconds:cfg.rest,setsData:[{kg:'',reps:'',time:''},{kg:'',reps:'',time:''},{kg:'',reps:'',time:''}]});}renderEditorExercisesList();}
+    function removeExerciseFromEditor(idx){syncEditorFormToData();tempEditorExercises.splice(idx,1);renderEditorExercisesList();}
     function saveTemplateFromEditor(){
+      syncEditorFormToData();
       const title=document.getElementById('editor-template-title').value.trim(),goal=document.getElementById('editor-template-goal').value,isCardio=document.getElementById('editor-template-is-cardio').checked,notes=document.getElementById('editor-template-notes').value.trim();
       if(!title){showToast('Inserisci un titolo per la scheda!');return;} let templates=getWorkoutTemplates(),key=editingTemplateKey||('CUSTOM_'+Date.now()),existingCreatedAt=editingTemplateKey&&templates[key]?templates[key].createdAt:null;
       templates[key]={title,goal,isCardio,notes,exercises:normalizeTemplate({isCardio,goal,exercises:tempEditorExercises}).exercises,createdAt:existingCreatedAt||new Date().toISOString()};localStorage.setItem('workout_templates',JSON.stringify(templates));showToast('✅ Scheda salvata con successo!');closeTemplateEditor();populateTemplateSelect();
@@ -2330,6 +2371,82 @@
     }
 
     /* SALVATAGGIO WORKOUT */
+    /* ID DELLO STORICO: numerici e univoci */
+    function hasValidHistoryId(item) {
+      return item && item.id !== undefined && item.id !== null && item.id !== '' && Number.isFinite(Number(item.id));
+    }
+
+    function generateHistoryId(history) {
+      const used = new Set((Array.isArray(history) ? history : []).map(h => h && Number(h.id)));
+      let id = Date.now();
+      while (used.has(id)) id++;
+      return id;
+    }
+
+    // Ogni sessione deve avere un id numerico e unico (migra anche le vecchie registrazioni senza id
+    // e le copie con id duplicato). Il primo record con un certo id lo mantiene.
+    function normalizeHistoryIds(history) {
+      const list = (Array.isArray(history) ? history : []).filter(item => item && typeof item === 'object');
+      const used = new Set();
+      const needId = [];
+      list.forEach(item => {
+        if (hasValidHistoryId(item) && !used.has(Number(item.id))) {
+          item.id = Number(item.id);
+          used.add(item.id);
+        } else {
+          needId.push(item);
+        }
+      });
+      let next = Date.now();
+      needId.forEach(item => {
+        while (used.has(next)) next++;
+        item.id = next;
+        used.add(next);
+      });
+      return { history: list, changed: needId.length > 0 };
+    }
+
+    function migrateHistoryIds() {
+      try {
+        const raw = localStorage.getItem('workout_history');
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return;
+        const next = JSON.stringify(normalizeHistoryIds(parsed).history);
+        if (next !== raw) localStorage.setItem('workout_history', next);
+      } catch (e) {}
+    }
+
+    // Unisce lo storico importato con quello locale senza creare duplicati.
+    function mergeHistoryRecords(incoming, current) {
+      const isObj = x => x && typeof x === 'object';
+      const hasId = x => x.id !== undefined && x.id !== null && x.id !== '';
+      const fingerprint = x => { const copy = { ...x }; delete copy.id; return JSON.stringify(copy); };
+      const all = [
+        ...(Array.isArray(incoming) ? incoming : []).filter(isObj),
+        ...(Array.isArray(current) ? current : []).filter(isObj)
+      ];
+      const seenIds = new Set(), seenFp = new Set(), result = [];
+      // 1) Record con id: a parità di id prevale la versione importata (come per le schede). "123" e 123 sono lo stesso id.
+      all.filter(hasId).forEach(item => {
+        const key = String(item.id);
+        if (seenIds.has(key)) return;
+        seenIds.add(key);
+        seenFp.add(fingerprint(item));
+        result.push(item);
+      });
+      // 2) Vecchie registrazioni senza id: le aggiungo solo se lo stesso allenamento non è già presente (anche con id assegnato dopo).
+      all.filter(x => !hasId(x)).forEach(item => {
+        const fp = fingerprint(item);
+        if (seenFp.has(fp)) return;
+        seenFp.add(fp);
+        result.push(item);
+      });
+      const normalized = normalizeHistoryIds(result).history;
+      normalized.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      return normalized;
+    }
+
     function saveWorkout() {
       try {
         const key = document.getElementById('workout-select').value;
@@ -2358,7 +2475,8 @@
         syncCurrentFormToData();
 
         const parsedDate = new Date(customDateStr);
-        const savedId = editingWorkoutId ? editingWorkoutId : Date.now();
+        // Per un nuovo allenamento l'id viene generato più sotto, dopo aver letto lo storico (così è garantito univoco).
+        const savedId = editingWorkoutId ? editingWorkoutId : null;
 
         const workoutData = {
           id: savedId,
@@ -2404,11 +2522,16 @@
           try { history = JSON.parse(rawStorage); } catch(e) { history = []; }
         }
 
+        history = normalizeHistoryIds(history).history;
+
         if (editingWorkoutId) {
           const index = history.findIndex(item => item.id === editingWorkoutId);
+          // Se il record originale non esiste più, lo reinserisco invece di perdere la modifica in silenzio.
           if (index !== -1) history[index] = workoutData;
+          else history.push(workoutData);
           editingWorkoutId = null;
         } else {
+          workoutData.id = generateHistoryId(history);
           history.push(workoutData);
         }
 
@@ -2769,20 +2892,12 @@
 
           let matched = false;
           const mergeHistory = (incoming) => {
-            const current = JSON.parse(localStorage.getItem('workout_history') || '[]');
-            const merged = [...(Array.isArray(incoming) ? incoming : []), ...current];
-            const unique = new Map();
-            merged.forEach((item) => {
-              if (!item || typeof item !== 'object') return;
-              // Le vecchie registrazioni possono non avere id: in quel caso non collassarle tutte su undefined.
-              const key = item.id !== undefined && item.id !== null && item.id !== ''
-                ? `id:${item.id}`
-                : `legacy:${JSON.stringify(item)}`;
-              if (!unique.has(key)) unique.set(key, item);
-            });
-            const result = Array.from(unique.values());
-            result.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-            localStorage.setItem('workout_history', JSON.stringify(result));
+            let current = [];
+            try {
+              const parsedCurrent = JSON.parse(localStorage.getItem('workout_history') || '[]');
+              if (Array.isArray(parsedCurrent)) current = parsedCurrent;
+            } catch (err) { current = []; }
+            localStorage.setItem('workout_history', JSON.stringify(mergeHistoryRecords(incoming, current)));
           };
 
           if (Array.isArray(imported)) {
@@ -2905,7 +3020,23 @@
       showToast(`💪 ${text}`, 3500);
     }
 
+    /* BLOCCO SCROLL DEL BODY quando è aperta almeno una modale a schermo intero (gestisce anche modali sovrapposte) */
+    function updateBodyScrollLock() {
+      const anyOpen = !!document.querySelector('.fullscreen-modal.active');
+      document.body.style.overflow = anyOpen ? 'hidden' : '';
+    }
+
+    function setupModalScrollLock() {
+      const observer = new MutationObserver(updateBodyScrollLock);
+      document.querySelectorAll('.fullscreen-modal').forEach(modal => {
+        observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+      });
+      updateBodyScrollLock();
+    }
+
     window.onload = function() {
+      migrateHistoryIds();
+      setupModalScrollLock();
       setDefaultDateTime();
       populateTemplateSelect();
       renderHistory();
